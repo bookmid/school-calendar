@@ -13,10 +13,16 @@
         .day-cell:hover { background-color: #f8fafc; }
         .day-cell.weekend-cell { background-color: #fef2f2; }
         .day-cell.holiday-cell { background-color: #fef2f2; }
-        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #6366f1; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; }
+        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; color: white; font-weight: 700; display: flex; justify-content: space-between; }
+        .event-교무 { background-color: #3b82f6; border-left: 3px solid #1e40af; }
+        .event-연구 { background-color: #8b5cf6; border-left: 3px solid #6d28d9; }
+        .event-학생 { background-color: #10b981; border-left: 3px solid #059669; }
+        .event-창의 { background-color: #f59e0b; border-left: 3px solid #d97706; }
+        .event-행정 { background-color: #14b8a6; border-left: 3px solid #0d9488; }
         .holiday-badge { font-size: 10px; color: #dc2626; font-weight: 700; margin-top: 2px; }
         .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
-        .del-x { color: #ef4444; cursor: pointer; margin-left: 4px; }
+        .del-x { color: white; cursor: pointer; margin-left: 4px; opacity: 0.8; }
+        .del-x:hover { opacity: 1; }
         .year-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .year-month { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; }
@@ -67,8 +73,6 @@
         </div>
 
         <div id="viewPort"></div>
-
-        <!-- 주간 안내사항 -->
         <div id="weeklyNotices" style="display:none;"></div>
 
         <footer class="text-center py-8 text-slate-400 text-[10px]">
@@ -76,56 +80,59 @@
         </footer>
     </div>
 
-    <!-- 동기화 상태 표시 -->
     <div id="syncIndicator" class="sync-indicator">● 동기화 완료</div>
 
     <script>
         const app = {
             API_URL: 'https://script.google.com/macros/s/AKfycbxJWIOqWzlIBIBQskT-zo7nb7vlw241VSnFZRTW3f-9LvEcozJ5lSYosGs4c6qAcoD9/exec',
-
+            
             events: [],
             notices: {},
             currentDate: new Date(),
             viewMode: 'monthly',
             isEditing: false,
             editingTimeout: null,
-
-            // ⭐ 대한민국 공휴일 (2026년 - 대체휴일 포함)
+            
+            // ⭐ 2026년 대한민국 공휴일 (정확한 날짜!)
             holidays: [
                 '2026-01-01:신정',
-                '2026-01-28:설날연휴',
-                '2026-01-29:설날',
-                '2026-01-30:설날연휴',
-                '2026-02-02:설날 대체휴일',
+                '2026-02-16:설날연휴',
+                '2026-02-17:설날',
+                '2026-02-18:설날연휴',
                 '2026-03-01:삼일절',
+                '2026-03-02:삼일절 대체휴일',
                 '2026-05-05:어린이날',
                 '2026-05-24:부처님오신날',
                 '2026-05-25:부처님오신날 대체휴일',
                 '2026-06-06:현충일',
                 '2026-08-15:광복절',
-                '2026-09-28:추석연휴',
-                '2026-09-29:추석',
-                '2026-09-30:추석연휴',
-                '2026-10-01:추석 대체휴일',
+                '2026-09-24:추석연휴',
+                '2026-09-25:추석',
+                '2026-09-26:추석연휴',
                 '2026-10-03:개천절',
-                '2026-10-05:개천절 대체휴일',
                 '2026-10-09:한글날',
                 '2026-12-25:크리스마스'
             ],
-
-            // 요일 배열
+            
             dayNames: ['일', '월', '화', '수', '목', '금', '토'],
-
+            
+            deptColors: {
+                '교무': 'event-교무',
+                '연구': 'event-연구',
+                '학생': 'event-학생',
+                '창의': 'event-창의',
+                '행정': 'event-행정'
+            },
+            
             getHoliday(dateStr) {
                 const found = this.holidays.find(h => h.startsWith(dateStr + ':'));
                 return found ? found.split(':')[1] : null;
             },
-
-            // 요일 가져오기
+            
             getDayName(date) {
                 return this.dayNames[date.getDay()];
             },
-
+            
             setSyncStatus(status) {
                 const indicator = document.getElementById('syncIndicator');
                 if (status === 'editing') {
@@ -143,21 +150,15 @@
                     indicator.textContent = '● 오류 발생';
                 }
             },
-
-            // ⭐ 주간 키 생성 (월요일 기준으로 변경!)
+            
             getWeekKey(date = this.currentDate) {
                 const d = new Date(date);
                 const day = d.getDay();
-
-                // 월요일 기준으로 계산 (0=일요일, 1=월요일)
-                // 일요일이면 -6일, 월요일이면 0일, 화요일이면 -1일...
                 const offset = day === 0 ? -6 : -(day - 1);
                 d.setDate(d.getDate() + offset);
-
                 return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             },
-
-            // 월요일 날짜 가져오기
+            
             getMondayOfWeek(date = this.currentDate) {
                 const d = new Date(date);
                 const day = d.getDay();
@@ -165,18 +166,15 @@
                 d.setDate(d.getDate() + offset);
                 return d;
             },
-
+            
             async loadFromServer() {
-                if (this.isEditing) {
-                    console.log('편집 중이므로 동기화 건너뜀');
-                    return;
-                }
-
+                if (this.isEditing) return;
+                
                 try {
                     this.setSyncStatus('syncing');
                     const response = await fetch(this.API_URL + '?action=load&t=' + Date.now());
                     const data = await response.json();
-
+                    
                     this.events = (data.events || []).map(item => {
                         let dateStr = item.date;
                         if (typeof dateStr === 'string' && dateStr.includes('T')) {
@@ -191,9 +189,8 @@
                             dapt: item.dapt
                         };
                     });
-
+                    
                     this.notices = data.notices || {};
-
                     this.setSyncStatus('success');
                     this.render();
                 } catch (error) {
@@ -201,17 +198,15 @@
                     this.setSyncStatus('error');
                 }
             },
-
+            
             async saveToServer(action, data) {
                 try {
                     this.setSyncStatus('syncing');
-
                     await fetch(this.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({ action, ...data })
                     });
-
                     setTimeout(() => {
                         this.isEditing = false;
                         this.loadFromServer();
@@ -221,43 +216,42 @@
                     this.setSyncStatus('error');
                 }
             },
-
+            
             async saveEvent() {
                 const dateInput = document.getElementById('inDate').value;
                 const title = document.getElementById('inTitle').value;
                 const dapt = document.getElementById('inDept').value;
-
+                
                 if (!dateInput || !title) {
                     alert('날짜와 내용을 입력하세요.');
                     return;
                 }
-
+                
                 const newEvent = {
                     id: Date.now().toString(),
                     date: dateInput,
                     title: title,
                     dapt: dapt
                 };
-
+                
                 this.events.push(newEvent);
                 this.render();
                 await this.saveToServer('addEvent', newEvent);
-
+                
                 document.getElementById('inDate').value = '';
                 document.getElementById('inTitle').value = '';
             },
-
+            
             async deleteEvent(id) {
                 if (!confirm('삭제하시겠습니까?')) return;
                 this.events = this.events.filter(e => e.id !== id);
                 this.render();
                 await this.saveToServer('deleteEvent', { id });
             },
-
-            // ⭐ 휴업일 지정/해제
+            
             async toggleHoliday(dateStr) {
                 const existing = this.events.find(e => e.date === dateStr && e.title === '휴업일');
-
+                
                 if (existing) {
                     if (confirm('휴업일을 해제하시겠습니까?')) {
                         await this.deleteEvent(existing.id);
@@ -276,30 +270,23 @@
                     }
                 }
             },
-
+            
             handleNoticeInput(role) {
                 this.isEditing = true;
                 this.setSyncStatus('editing');
-
-                if (this.editingTimeout) {
-                    clearTimeout(this.editingTimeout);
-                }
+                if (this.editingTimeout) clearTimeout(this.editingTimeout);
             },
-
+            
             async saveNotice(role) {
                 const weekKey = this.getWeekKey();
                 const input = document.getElementById(`notice_${role}`);
                 if (!input) return;
-
-                if (!this.notices[weekKey]) {
-                    this.notices[weekKey] = {};
-                }
+                
+                if (!this.notices[weekKey]) this.notices[weekKey] = {};
                 this.notices[weekKey][role] = input.value;
-
-                if (this.editingTimeout) {
-                    clearTimeout(this.editingTimeout);
-                }
-
+                
+                if (this.editingTimeout) clearTimeout(this.editingTimeout);
+                
                 this.editingTimeout = setTimeout(async () => {
                     await this.saveToServer('saveNotice', {
                         weekKey,
@@ -308,7 +295,7 @@
                     });
                 }, 2000);
             },
-
+            
             move(direction) {
                 if (this.viewMode === 'yearly') {
                     this.currentDate.setFullYear(this.currentDate.getFullYear() + direction);
@@ -319,30 +306,30 @@
                 }
                 this.render();
             },
-
+            
             setView(mode) {
                 this.viewMode = mode;
                 this.render();
             },
-
+            
             renderYearly() {
                 const year = this.currentDate.getFullYear();
                 let html = '<div class="year-view">';
-
+                
                 for (let m = 0; m < 12; m++) {
                     html += `<div class="year-month">
                         <div class="year-month-title">${year}년 ${m + 1}월</div>
                         <div class="mini-calendar">`;
-
+                    
                     ['일','월','화','수','목','금','토'].forEach(w => {
                         html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`;
                     });
-
+                    
                     const first = new Date(year, m, 1).getDay();
                     const last = new Date(year, m + 1, 0).getDate();
-
+                    
                     for (let i = 0; i < first; i++) html += '<div></div>';
-
+                    
                     for (let d = 1; d <= last; d++) {
                         const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                         const dayIdx = new Date(year, m, d).getDay();
@@ -351,47 +338,46 @@
                         const isWeekend = dayIdx === 0 || dayIdx === 6;
                         const isHoliday = dayEvents.some(e => e.title === '휴업일');
                         const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-600');
-
-                        // ⭐ 공휴일, 연휴, 휴업일, 주말 모두 연한 빨간색
+                        
                         let cellClass = '';
                         if (holiday || isHoliday || isWeekend) {
                             cellClass = 'holiday';
                         } else if (dayEvents.length > 0) {
                             cellClass = 'has-event';
                         }
-
+                        
                         html += `<div class="mini-day ${cellClass} ${colorClass}" title="${dayEvents.map(e => e.title).join(', ')}">
                             ${d}`;
-
+                        
                         if (dayEvents.length > 0) {
                             html += `<div class="mini-event">${dayEvents[0].title}</div>`;
                         }
-
+                        
                         html += `</div>`;
                     }
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 return html + '</div>';
             },
-
+            
             renderMonthly() {
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 let html = '<div class="calendar-grid">';
-
+                
                 ['일','월','화','수','목','금','토'].forEach(w => {
                     html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-bold text-slate-400">${w}</div>`;
                 });
-
+                
                 const first = new Date(year, month, 1).getDay();
                 const last = new Date(year, month + 1, 0).getDate();
-
+                
                 for (let i = 0; i < first; i++) {
                     html += '<div class="day-cell bg-slate-50/30"></div>';
                 }
-
+                
                 for (let d = 1; d <= last; d++) {
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dayIdx = new Date(year, month, d).getDay();
@@ -399,90 +385,86 @@
                     const isWeekend = dayIdx === 0 || dayIdx === 6;
                     const isHoliday = this.events.some(e => e.date === dateStr && e.title === '휴업일');
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
-
-                    // ⭐ 주말, 공휴일, 휴업일 모두 연한 빨간색
                     const cellClass = (isWeekend || holiday || isHoliday) ? 'weekend-cell' : '';
-
+                    
                     html += `<div class="day-cell ${cellClass}" onclick="app.toggleHoliday('${dateStr}')">
                         <div class="text-[11px] font-black ${colorClass}">${d}</div>`;
-
+                    
                     if (holiday) {
                         html += `<div class="holiday-badge">${holiday}</div>`;
                     }
-
+                    
                     html += '<div class="mt-1">';
-
+                    
                     this.events.filter(e => e.date === dateStr).forEach(e => {
-                        html += `<div class="event-item" onclick="event.stopPropagation()">
+                        const colorClass = this.deptColors[e.dapt] || 'event-교무';
+                        html += `<div class="event-item ${colorClass}" onclick="event.stopPropagation()">
                             <span>${e.title} (${e.dapt})</span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 return html + '</div>';
             },
-
+            
             renderWeekly() {
                 const start = new Date(this.currentDate);
                 start.setDate(this.currentDate.getDate() - this.currentDate.getDay());
-
+                
                 let html = '<div class="flex flex-col gap-2">';
-
+                
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(start);
                     d.setDate(start.getDate() + i);
-
+                    
                     const year = d.getFullYear();
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const day = String(d.getDate()).padStart(2, '0');
                     const dateStr = `${year}-${month}-${day}`;
-
+                    
                     const holiday = this.getHoliday(dateStr);
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                     const isHoliday = this.events.some(e => e.date === dateStr && e.title === '휴업일');
-
-                    // ⭐ 요일 가져오기
+                    
                     const dayName = this.getDayName(d);
                     const dayColor = d.getDay() === 0 ? 'text-red-500' : (d.getDay() === 6 ? 'text-blue-500' : 'text-slate-500');
-
-                    // ⭐ 주말, 공휴일, 휴업일 모두 연한 빨간색
                     const weekendClass = (isWeekend || holiday || isHoliday) ? 'weekend-bg' : '';
-
+                    
                     html += `<div class="week-item ${weekendClass} p-4 rounded-xl border flex items-center shadow-sm">
                         <div class="w-32 font-black text-indigo-900 border-r mr-4">
                             ${d.getDate()}일
                             <span class="week-day-label ${dayColor}">(${dayName})</span>`;
-
+                    
                     if (holiday) {
                         html += `<div class="holiday-badge text-[9px]">${holiday}</div>`;
                     }
-
+                    
                     html += '</div><div class="flex-1">';
-
+                    
                     this.events.filter(e => e.date === dateStr).forEach(e => {
-                        html += `<div class="event-item mb-1 p-2">
+                        const colorClass = this.deptColors[e.dapt] || 'event-교무';
+                        html += `<div class="event-item ${colorClass} mb-1 p-2">
                             <span>${e.title} (${e.dapt})</span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 html += '</div>';
-
-                // ⭐ 월요일 기준으로 주간 키 생성
+                
                 const weekKey = this.getWeekKey();
                 const monday = this.getMondayOfWeek();
                 const weekNotices = this.notices[weekKey] || {};
-
+                
                 const noticeHtml = `
                     <div class="notice-section">
                         <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${monday.getFullYear()}.${String(monday.getMonth() + 1).padStart(2, '0')}.${String(monday.getDate()).padStart(2, '0')}~)</h3>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">🎓 교장</div>
                             <input type="text" id="notice_principal" class="notice-input" 
@@ -491,7 +473,7 @@
                                    onchange="app.saveNotice('principal')" 
                                    placeholder="교장 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">👔 교감</div>
                             <input type="text" id="notice_vprincipal" class="notice-input" 
@@ -500,7 +482,7 @@
                                    onchange="app.saveNotice('vprincipal')" 
                                    placeholder="교감 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">🏢 행정실장</div>
                             <input type="text" id="notice_admin" class="notice-input" 
@@ -509,16 +491,43 @@
                                    onchange="app.saveNotice('admin')" 
                                    placeholder="행정실장 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
-                            <div class="notice-label">📋 부장</div>
-                            <input type="text" id="notice_dept" class="notice-input" 
-                                   value="${weekNotices.dept || ''}" 
-                                   oninput="app.handleNoticeInput('dept')"
-                                   onchange="app.saveNotice('dept')" 
-                                   placeholder="부장 안내사항 입력">
+                            <div class="notice-label">📘 교무부</div>
+                            <input type="text" id="notice_dept1" class="notice-input" 
+                                   value="${weekNotices.dept1 || ''}" 
+                                   oninput="app.handleNoticeInput('dept1')"
+                                   onchange="app.saveNotice('dept1')" 
+                                   placeholder="교무부 안내사항 입력">
                         </div>
-
+                        
+                        <div class="notice-item">
+                            <div class="notice-label">📕 연구부</div>
+                            <input type="text" id="notice_dept2" class="notice-input" 
+                                   value="${weekNotices.dept2 || ''}" 
+                                   oninput="app.handleNoticeInput('dept2')"
+                                   onchange="app.saveNotice('dept2')" 
+                                   placeholder="연구부 안내사항 입력">
+                        </div>
+                        
+                        <div class="notice-item">
+                            <div class="notice-label">📗 학생부</div>
+                            <input type="text" id="notice_dept3" class="notice-input" 
+                                   value="${weekNotices.dept3 || ''}" 
+                                   oninput="app.handleNoticeInput('dept3')"
+                                   onchange="app.saveNotice('dept3')" 
+                                   placeholder="학생부 안내사항 입력">
+                        </div>
+                        
+                        <div class="notice-item">
+                            <div class="notice-label">📙 창의인성부</div>
+                            <input type="text" id="notice_dept4" class="notice-input" 
+                                   value="${weekNotices.dept4 || ''}" 
+                                   oninput="app.handleNoticeInput('dept4')"
+                                   onchange="app.saveNotice('dept4')" 
+                                   placeholder="창의인성부 안내사항 입력">
+                        </div>
+                        
                         <div class="notice-item">
                             <div class="notice-label">🎯 학년실</div>
                             <input type="text" id="notice_grade" class="notice-input" 
@@ -529,21 +538,21 @@
                         </div>
                     </div>
                 `;
-
+                
                 document.getElementById('weeklyNotices').innerHTML = noticeHtml;
                 document.getElementById('weeklyNotices').style.display = 'block';
-
+                
                 return html;
             },
-
+            
             render() {
                 const viewPort = document.getElementById('viewPort');
                 const titleText = document.getElementById('titleText');
                 const weeklyNotices = document.getElementById('weeklyNotices');
-
+                
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth() + 1;
-
+                
                 if (this.viewMode === 'yearly') {
                     titleText.textContent = `${year}년 전체 학사력`;
                     viewPort.innerHTML = this.renderYearly();
@@ -557,14 +566,14 @@
                     viewPort.innerHTML = this.renderWeekly();
                 }
             },
-
+            
             async init() {
                 await this.loadFromServer();
                 this.render();
                 setInterval(() => this.loadFromServer(), 5000);
             }
         };
-
+        
         window.addEventListener('DOMContentLoaded', () => {
             app.init();
         });
