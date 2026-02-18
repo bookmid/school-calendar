@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례중학교 실시간 학사력</title>
+    <title>학교 실시간 학사력</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 15px; overflow: hidden; }
-        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; }
+        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; position: relative; }
         @media (max-width: 640px) { .day-cell { min-height: 85px; padding: 4px; } }
         .day-cell:hover { background-color: #f1f5f9; }
         .bg-holiday { background-color: #fff1f2 !important; } 
@@ -19,7 +19,7 @@
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px; outline: none; width: 100%; }
         
         /* 제목 옆 버튼 스타일 */
-        .nav-arrow { font-size: 1.5rem; color: #c7d2fe; cursor: pointer; transition: 0.2s; padding: 0 15px; user-select: none; }
+        .nav-arrow { font-size: 1.5rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; padding: 0 15px; user-select: none; }
         .nav-arrow:hover { color: #4f46e5; transform: scale(1.2); }
         .nav-arrow:active { transform: scale(0.9); }
     </style>
@@ -27,7 +27,7 @@
 <body>
     <nav class="bg-indigo-900 text-white p-4 shadow-xl sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-black cursor-pointer" onclick="location.reload()">🏫 구례중 학사력</h1>
+            <h1 class="text-xl font-black cursor-pointer" onclick="location.reload()">🏫 실시간 학사력</h1>
             <div class="flex gap-2">
                 <button onclick="changeView('yearly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">1년</button>
                 <button onclick="changeView('monthly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">월간</button>
@@ -60,7 +60,7 @@
 
         <div class="flex justify-center items-center mb-6">
             <div onclick="shiftTime(-1)" class="nav-arrow">❮</div>
-            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[180px] tracking-tighter">로딩 중...</h2>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[200px] tracking-tighter">데이터 로딩 중...</h2>
             <div onclick="shiftTime(1)" class="nav-arrow">❯</div>
         </div>
 
@@ -69,128 +69,4 @@
 
     <footer class="mt-12 pb-10 text-center">
         <div class="inline-block px-4 py-1 bg-white border border-gray-100 rounded-full text-[10px] text-gray-400 shadow-sm">
-            Developed by <span class="font-bold text-gray-500">CHOI GWANG CHEUL</span>, Gurye Middle School
-        </div>
-    </footer>
-
-    <script>
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
-        let events = [];
-        let curDate = new Date();
-        let curView = 'monthly';
-
-        const kHolidays = ['2026-01-01', '2026-03-01', '2026-05-05', '2026-06-06', '2026-08-15', '2026-10-03', '2026-10-09', '2026-12-25'];
-
-        function formatDate(raw) {
-            if(!raw) return "";
-            let d = new Date(raw);
-            if(isNaN(d.getTime())) return "";
-            if(raw.toString().includes('T')) d.setHours(d.getHours() + 9);
-            return d.toISOString().split('T')[0];
-        }
-
-        async function fetchEvents() {
-            try {
-                const res = await fetch(API_URL);
-                const data = await res.json();
-                events = data.map(e => ({ id: e.id, date: formatDate(e.date), title: e.title, dapt: e.dapt || '미지정' }));
-                render();
-            } catch(e) { document.getElementById('mainTitle').innerText = "통신 에러"; }
-        }
-
-        async function handleAdd() {
-            const date = document.getElementById('inputDate').value;
-            const title = document.getElementById('inputTitle').value;
-            const dapt = document.getElementById('inputDept').value;
-            if(!date || !title) return alert("내용을 입력하세요!");
-            const temp = { id: Date.now().toString(), date, title, dapt };
-            events.push(temp);
-            render();
-            document.getElementById('inputTitle').value = '';
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...temp }) });
-        }
-
-        async function deleteEvent(id) {
-            event.stopPropagation();
-            if(!confirm("이 일정을 삭제할까요?")) return;
-            events = events.filter(e => e.id.toString() !== id.toString());
-            render();
-            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id.toString() }) });
-        }
-
-        async function setDayOff(date) {
-            if(confirm(`${date}을 휴업일로 지정하시겠습니까?`)) {
-                const temp = { id: Date.now().toString(), date, title: '휴업일', dapt: '전체' };
-                events.push(temp);
-                render();
-                fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...temp }) });
-            }
-        }
-
-        function changeView(v) { curView = v; render(); }
-
-        function shiftTime(n) {
-            if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
-            else if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
-            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
-            render();
-        }
-
-        function render() {
-            const port = document.getElementById('viewPort');
-            const head = document.getElementById('mainTitle');
-            const y = curDate.getFullYear(), m = curDate.getMonth();
-            port.innerHTML = '';
-
-            if(curView === 'monthly') {
-                head.innerText = `${y}년 ${m + 1}월`;
-                let html = '<div class="calendar-grid">';
-                ['일','월','화','수','목','금','토'].forEach((d,i) => html += `<div class="bg-gray-50 p-2 text-center text-[10px] font-bold ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-400'}">${d}</div>`);
-                const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-                for(let i=0; i<first; i++) html += '<div class="day-cell bg-gray-50/30"></div>';
-                for(let d=1; d<=last; d++) {
-                    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const isSunday = new Date(y,m,d).getDay()===0;
-                    const isHoliday = kHolidays.includes(ds);
-                    const isDayOff = events.some(e => e.date === ds && e.title === '휴업일');
-                    html += `<div class="day-cell ${isSunday || isHoliday || isDayOff ? 'bg-holiday' : ''}" onclick="setDayOff('${ds}')">
-                                <div class="text-[10px] font-bold ${isSunday || isHoliday ? 'text-red-500' : 'text-gray-400'}">${d}</div>`;
-                    events.filter(e => e.date === ds).forEach(e => {
-                        const isH = e.title === '휴업일';
-                        html += `<div class="event-badge ${isH ? 'holiday-badge' : ''}">${isH ? '휴업' : e.title}</div>`;
-                    });
-                    html += `</div>`;
-                }
-                port.innerHTML = html + '</div>';
-            } else if(curView === 'weekly') {
-                const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
-                head.innerText = `${m+1}월 주간`;
-                let html = '<div class="space-y-3">';
-                for(let i=0; i<7; i++) {
-                    const d = new Date(start); d.setDate(start.getDate() + i);
-                    const ds = d.toISOString().split('T')[0];
-                    const isHDay = kHolidays.includes(ds) || i === 0 || events.some(e => e.date === ds && e.title === '휴업일');
-                    html += `<div class="p-4 rounded-2xl shadow-sm border flex items-center ${isHDay ? 'bg-holiday border-red-100' : 'bg-white border-gray-100'}">
-                        <div class="w-12 text-center mr-4 border-r pr-4 font-black ${i===0 || kHolidays.includes(ds)?'text-red-500':'text-indigo-900'} text-xl">${d.getDate()}</div>
-                        <div class="flex-1">`;
-                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge ${e.title==='휴업일'?'holiday-badge':''} text-xs py-1.5 flex justify-between"><span>${e.title}</span><span class="del-btn" onclick="deleteEvent('${e.id}')">✕</span></div>`);
-                    html += `</div></div>`;
-                }
-                port.innerHTML = html + '</div>';
-            } else if(curView === 'yearly') {
-                head.innerText = `${y}년 전체`;
-                let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">';
-                for(let i=0; i<12; i++) {
-                    html += `<div class="bg-white p-3 rounded-xl border border-gray-100"><div class="font-bold text-indigo-600 mb-1 text-sm border-b">${i+1}월</div>`;
-                    events.filter(e => { const d = new Date(e.date); return d.getMonth() === i && d.getFullYear() === y; })
-                          .sort((a,b)=>new Date(a.date)-new Date(b.date))
-                          .forEach(e => html += `<div class="text-[9px] mb-0.5 ${e.title==='휴업일'?'text-red-500':''}"><strong>${e.date.split('-')[2]}</strong> ${e.title}</div>`);
-                    html += '</div>';
-                }
-                port.innerHTML = html + '</div>';
-            }
-        }
-        window.onload = fetchEvents;
-    </script>
-</body>
-</html>
+            Developed by <span class="font-bold text-gray-500 text-indigo-900">CHOI GWANG CHEUL</span>
