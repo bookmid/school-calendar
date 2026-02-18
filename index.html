@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례중학교 실시간 학사력</title>
+    <title>구례중학교 학사력</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
@@ -12,8 +12,6 @@
         .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; }
         .bg-holiday { background-color: #fff1f2 !important; }
         .event-badge { font-size: 11px; padding: 2px 4px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 3px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .year-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .mini-month { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         footer { margin-top: auto; padding: 20px; text-align: center; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
@@ -32,14 +30,14 @@
     <main class="container mx-auto p-4 max-w-6xl">
         <section class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 mt-4 flex flex-wrap gap-3 items-end justify-center">
             <div class="flex-1 min-w-[120px]"><label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
-                <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+                <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none"></div>
             <div class="flex-[2] min-w-[200px]"><label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
-                <input type="text" id="titleIn" placeholder="내용 입력" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+                <input type="text" id="titleIn" placeholder="내용 입력" class="w-full border p-2 rounded-xl outline-none"></div>
             <div class="flex-1 min-w-[120px]"><label class="text-[10px] font-bold text-gray-400 ml-1">관련 부서</label>
-                <select id="deptIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                <select id="deptIn" class="w-full border p-2 rounded-xl bg-white outline-none">
                     <option value="교무부">교무부</option><option value="학생부">학생부</option><option value="연구부">연구부</option><option value="행정실">행정실</option>
                 </select></div>
-            <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md active:scale-95">일정 저장</button>
+            <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 active:scale-95 transition">일정 저장</button>
         </section>
 
         <div class="flex justify-center items-center gap-10 mb-6">
@@ -57,24 +55,23 @@
     </footer>
 
     <script>
-        // 중요: 이미지 76d7e6의 주소를 참고하되, 새로 배포하셨다면 새 주소를 넣으세요.
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvkIrg_REkKSK/exec';
+        // 이 URL을 새 배포 URL로 반드시 교체하세요!
+        const API_URL = 'https://script.google.com/macros/s/AKfycbw6vFL46mn_28WWuJCMRGJ1cZj0irzON7mi7IDlE3SkVk9SSYPmCZCoJQTg0wAfpQwC/exec';
         let events = [];
         let curDate = new Date();
         let curView = 'monthly';
         let manualReds = new Set();
-        const holidays = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02', '2026-05-05', '2026-05-24', '2026-06-06', '2026-08-15', '2026-09-24', '2026-09-25', '2026-09-26', '2026-10-03', '2026-10-09', '2026-12-25'];
+        const holidays = ['2026-01-01', '2026-03-01', '2026-05-05', '2026-06-06', '2026-08-15', '2026-10-03', '2026-10-09', '2026-12-25'];
 
         async function fetchEvents() {
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
-                // 2. 데이터 필드 매칭: 시트의 'data' 헤더를 'date'로 통일하여 처리
+                // 시트의 'data' 필드를 'date'로 변환하여 저장
                 events = data.map(e => ({ ...e, date: e.data || e.date }));
                 render();
             } catch(e) { 
-                console.error(e);
-                document.getElementById('mainTitle').innerText = "연결 오류(URL 확인)"; 
+                document.getElementById('mainTitle').innerText = "연결 오류!"; 
             }
         }
 
@@ -109,34 +106,33 @@
                     const isHoliday = holidays.includes(ds) || new Date(y, m, d).getDay() === 0 || new Date(y, m, d).getDay() === 6 || manualReds.has(ds);
                     html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : ''}" onclick="toggleColor('${ds}')">
                         <div class="text-xs font-bold ${isHoliday ? 'text-red-500' : 'text-gray-400'}">${d}</div>`;
-                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge">【${e.dapt || '공통'}】 ${e.title}</div>`);
+                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge">【${e.dapt || '부서'}】 ${e.title}</div>`);
                     html += `</div>`;
                 }
                 port.innerHTML = html + '</div>';
-            } 
-            else if(curView === 'yearly') {
+            } else if(curView === 'yearly') {
                 head.innerText = `${y}년 전체 학사`;
-                let html = '<div class="year-wrapper">';
+                let html = '<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">';
                 for(let i=0; i<12; i++) {
-                    html += `<div class="mini-month"><div class="font-bold text-indigo-600 border-b pb-1 mb-2 text-sm">${i+1}월</div><div class="space-y-1">`;
+                    html += `<div class="bg-white p-4 rounded-xl shadow-sm border"><div class="font-bold text-indigo-600 mb-2 border-b pb-1">${i+1}월</div>`;
                     const mEvents = events.filter(e => new Date(e.date).getMonth() === i && new Date(e.date).getFullYear() === y);
-                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${e.date.split('-')[2]}일</strong> ${e.title}</div>`);
-                    else html += `<div class="text-[10px] text-gray-300 italic">일정 없음</div>`;
-                    html += '</div></div>';
+                    mEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e => {
+                        html += `<div class="text-[11px] mb-1"><strong>${e.date.split('-')[2]}일</strong> ${e.title}</div>`;
+                    });
+                    html += '</div>';
                 }
                 port.innerHTML = html + '</div>';
-            }
-            else if(curView === 'weekly') {
+            } else if(curView === 'weekly') {
                 head.innerText = `주간 계획`;
-                let html = '<div class="max-w-2xl mx-auto">';
+                let html = '<div class="max-w-xl mx-auto space-y-3">';
                 const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
                 for(let i=0; i<7; i++) {
                     const d = new Date(start); d.setDate(start.getDate() + i);
                     const ds = d.toISOString().split('T')[0];
-                    html += `<div class="bg-white rounded-xl shadow-sm p-4 mb-3 flex border-l-4 border-indigo-500"><div class="w-16 text-center border-r pr-4 mr-4">
-                        <div class="text-xl font-bold ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d.getDate()}</div><div class="text-xs text-gray-400">${['일','월','화','수','목','금','토'][i]}</div></div>
+                    html += `<div class="bg-white p-4 rounded-xl shadow-sm border-l-4 border-indigo-500 flex items-center">
+                        <div class="w-12 text-center mr-4 border-r pr-4"><div class="text-xl font-bold">${d.getDate()}</div><div class="text-[10px]">${['일','월','화','수','목','금','토'][i]}</div></div>
                         <div class="flex-1">`;
-                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">【${e.dapt || '부서'}】 ${e.title}</div>`);
+                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge text-sm p-1">【${e.dapt || '부서'}】 ${e.title}</div>`);
                     html += `</div></div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -149,9 +145,7 @@
             const dept = document.getElementById('deptIn').value;
             if(!date || !title) return alert("내용을 입력하세요!");
             
-            document.getElementById('mainTitle').innerText = "전송 중...";
-            
-            // 시트의 헤더 'data', 'title', 'dapt'와 정확히 매칭
+            document.getElementById('mainTitle').innerText = "저장 중...";
             const payload = { action: 'add', id: Date.now().toString(), data: date, title: title, dapt: dept };
             
             try {
@@ -159,7 +153,7 @@
                 document.getElementById('titleIn').value = '';
                 await fetchEvents();
             } catch (e) {
-                alert("저장 실패! GAS URL이나 권한 설정을 확인하세요.");
+                alert("연결 실패! 새 배포 URL을 확인하세요.");
                 fetchEvents();
             }
         }
