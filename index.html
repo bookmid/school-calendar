@@ -7,133 +7,54 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; text-align: center; background-color: #f3f4f6; margin: 0; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e5e7eb; border: 1px solid #e5e7eb; }
-        .day-cell { min-height: 120px; background-color: white; padding: 6px; text-align: left; transition: 0.2s; }
-        .day-cell:hover { background-color: #fcfcfc; }
-        .event-badge { font-size: 10px; padding: 2px 4px; margin-top: 2px; border-radius: 4px; background-color: #eff6ff; border-left: 3px solid #3b82f6; color: #1e40af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
-        .loading-bar { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: #6366f1; display: none; z-index: 9999; animation: loading 2s infinite; }
+        body { font-family: 'Pretendard', sans-serif; text-align: center; background-color: #f8fafc; margin: 0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
+        .day-cell { min-height: 120px; background-color: white; padding: 8px; text-align: left; transition: 0.2s; }
+        .day-cell:hover { background-color: #f1f5f9; }
+        .event-badge { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 5px; background-color: #eef2ff; border-left: 4px solid #4f46e5; color: #3730a3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; font-weight: 600; }
+        .event-badge:hover { background-color: #e0e7ff; transform: scale(1.02); }
+        .loading-bar { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: #4f46e5; display: none; z-index: 9999; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        @media (max-width: 640px) { .day-cell { min-height: 85px; } .event-badge { font-size: 8px; } }
+        @media (max-width: 640px) { .day-cell { min-height: 80px; padding: 4px; } .event-badge { font-size: 9px; padding: 1px 3px; } }
     </style>
 </head>
 <body>
     <div id="loading" class="loading-bar"></div>
 
-    <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <nav class="bg-indigo-700 text-white p-4 shadow-md sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold cursor-pointer" onclick="location.reload()">🏫 구례중학교 실시간 학사력</h1>
-            <div class="flex gap-2">
-                <button onclick="setView('yearly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">1년</button>
-                <button onclick="setView('monthly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">월간</button>
-                <button onclick="setView('weekly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">주간</button>
+            <div class="flex gap-2 text-sm">
+                <button onclick="setView('yearly')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-800 rounded-lg transition">1년</button>
+                <button onclick="setView('monthly')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-800 rounded-lg transition font-bold underline">월간</button>
+                <button onclick="setView('weekly')" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-800 rounded-lg transition">주간</button>
             </div>
         </div>
     </nav>
 
     <main class="container mx-auto p-4 max-w-6xl">
-        <section class="bg-white p-5 rounded-2xl shadow-sm mb-6 border border-gray-200">
-            <div class="flex flex-col md:flex-row justify-center items-center gap-4">
-                <div class="flex flex-col items-start">
-                    <span class="text-[10px] font-bold text-indigo-500 mb-1 ml-1">날짜</span>
-                    <input type="date" id="dateIn" class="border border-gray-300 p-2 rounded-lg w-full md:w-auto outline-none">
+        <section class="bg-white p-6 rounded-2xl shadow-sm mb-6 border border-gray-100 mt-2">
+            <div class="flex flex-col md:flex-row justify-center items-end gap-4">
+                <div class="w-full md:w-auto text-left">
+                    <label class="text-xs font-bold text-gray-400 ml-1">날짜 선택</label>
+                    <input type="date" id="dateIn" class="w-full border border-gray-200 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="flex flex-col items-start flex-grow max-w-md">
-                    <span class="text-[10px] font-bold text-indigo-500 mb-1 ml-1">행사 내용</span>
-                    <input type="text" id="titleIn" placeholder="행사 내용을 입력하세요" class="border border-gray-300 p-2 rounded-lg w-full outline-none">
+                <div class="w-full md:flex-1 text-left">
+                    <label class="text-xs font-bold text-gray-400 ml-1">행사 내용</label>
+                    <input type="text" id="titleIn" placeholder="내용을 입력하세요" class="w-full border border-gray-200 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                 </div>
-                <div class="flex flex-col items-start">
-                    <span class="text-[10px] font-bold text-indigo-500 mb-1 ml-1">관련 부서</span>
-                    <select id="deptIn" class="border border-gray-300 p-2 rounded-lg w-full md:w-auto outline-none">
+                <div class="w-full md:w-auto text-left">
+                    <label class="text-xs font-bold text-gray-400 ml-1">담당 부서</label>
+                    <select id="deptIn" class="w-full border border-gray-200 p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
                         <option value="교무부">교무부</option><option value="연구부">연구부</option><option value="학생부">학생부</option>
                         <option value="창의인성부">창의인성부</option><option value="교감">교감</option><option value="교장">교장</option><option value="기타">기타</option>
                     </select>
                 </div>
-                <button onclick="handleAdd()" class="w-full md:w-28 mt-5 bg-indigo-600 text-white p-2.5 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition active:scale-95">일정 저장</button>
+                <button onclick="handleAdd()" class="w-full md:w-28 bg-indigo-600 text-white py-3 rounded-xl font-bold hover:bg-indigo-700 shadow-lg shadow-indigo-200 transition active:scale-95">저장하기</button>
             </div>
         </section>
 
-        <div class="flex justify-center items-center gap-10 mb-6">
-            <button onclick="shiftTime(-1)" class="text-indigo-600 hover:scale-125 transition text-3xl font-bold">◀</button>
-            <h2 id="mainTitle" class="text-2xl font-extrabold text-gray-800 min-w-[250px]">데이터 로딩 중...</h2>
-            <button onclick="shiftTime(1)" class="text-indigo-600 hover:scale-125 transition text-3xl font-bold">▶</button>
-        </div>
-
-        <div id="viewPort" class="bg-white p-2 md:p-6 rounded-3xl shadow-xl min-h-[500px]"></div>
-    </main>
-
-    <script>
-        // 선생님이 보내주신 API 주소를 바로 적용했습니다!
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvkIrg_REkKSK/exec'; 
-        
-        let events = [];
-        let curDate = new Date();
-        let curView = 'monthly';
-
-        async function fetchEvents() {
-            document.getElementById('loading').style.display = 'block';
-            try {
-                const res = await fetch(API_URL);
-                events = await res.json();
-                render();
-            } catch(e) { console.error("Load Error:", e); }
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        async function handleAdd() {
-            const date = document.getElementById('dateIn').value;
-            const title = document.getElementById('titleIn').value;
-            const dept = document.getElementById('deptIn').value;
-            if(!date || !title) return alert("날짜와 내용을 모두 입력해주세요!");
-
-            const newEvent = { action: 'add', id: Date.now().toString(), date, title, dept };
-            document.getElementById('loading').style.display = 'block';
-            
-            try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify(newEvent) });
-                document.getElementById('titleIn').value = '';
-                document.getElementById('titleIn').focus();
-                await fetchEvents();
-            } catch(e) { alert("저장 실패! 다시 시도해주세요."); }
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        async function deleteEv(id) {
-            if(!confirm("이 일정을 삭제하시겠습니까?")) return;
-            document.getElementById('loading').style.display = 'block';
-            try {
-                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id.toString() }) });
-                await fetchEvents();
-            } catch(e) { alert("삭제 실패!"); }
-            document.getElementById('loading').style.display = 'none';
-        }
-
-        function setView(v) { curView = v; render(); }
-        function shiftTime(n) {
-            if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
-            else if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
-            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
-            render();
-        }
-
-        function render() {
-            const port = document.getElementById('viewPort');
-            const head = document.getElementById('mainTitle');
-            port.innerHTML = '';
-            const y = curDate.getFullYear(), m = curDate.getMonth();
-
-            if(curView === 'monthly') {
-                head.innerText = `${y}년 ${m + 1}월 계획`;
-                let html = '<div class="calendar-grid">';
-                ['일','월','화','수','목','금','토'].forEach((d,i) => html += `<div class="bg-gray-50 p-2 font-bold text-xs ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d}</div>`);
-                const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
-                for(let i=0; i<first; i++) html += '<div class="day-cell bg-gray-50/30"></div>';
-                for(let d=1; d<=last; d++) {
-                    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    html += `<div class="day-cell"><div class="text-xs font-bold text-gray-400 mb-1">${d}</div>`;
-                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge" onclick="deleteEv('${e.id}')">[${e.dept}] ${e.title}</div>`);
-                    html += `</div>`;
-                }
-                port.innerHTML = html + '</div>';
-            } else if(curView === 'weekly') {
-                const d
+        <div class="flex justify-center items-center gap-8 mb-6">
+            <button onclick="shiftTime(-1)" class="text-indigo-400 hover:text-indigo-700 transition text-3xl font-bold">❮</button>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px]">데이터 확인 중...</h2>
+            <button onclick="shiftTime(
