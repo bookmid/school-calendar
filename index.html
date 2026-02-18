@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -10,11 +9,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-        .day-cell { min-height: 110px; background-color: white; padding: 6px; position: relative; cursor: pointer; }
+        .day-cell { min-height: 110px; background-color: white; padding: 6px; position: relative; cursor: pointer; overflow: hidden; }
         .day-cell:hover { background-color: #f8fafc; }
         .day-cell.weekend-cell { background-color: #fef2f2; }
-        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #94a3b8; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
-        .dept-badge { font-weight: 900; margin-left: 4px; }
+        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #94a3b8; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; overflow: hidden; white-space: nowrap; }
+        .event-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
+        .dept-badge { font-weight: 900; margin-left: 4px; white-space: nowrap; }
         .dept-교무 { color: #3b82f6; }
         .dept-연구 { color: #8b5cf6; }
         .dept-학생 { color: #10b981; }
@@ -22,8 +22,8 @@
         .dept-행정 { color: #14b8a6; }
         .holiday-badge { font-size: 10px; color: #dc2626; font-weight: 700; margin-top: 2px; }
         .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
-        .del-x { color: #ef4444; cursor: pointer; margin-left: 8px; font-weight: bold; }
-        .del-x:hover { color: #dc2626; }
+        .del-x { color: #ef4444; cursor: pointer; margin-left: 4px; font-weight: bold; opacity: 0.7; }
+        .del-x:hover { opacity: 1; }
         .year-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .year-month { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; }
@@ -93,6 +93,7 @@
             viewMode: 'monthly',
             isEditing: false,
             editingTimeout: null,
+            lastSyncTime: 0,
             
             holidays: [
                 '2026-01-01:신정',
@@ -116,7 +117,6 @@
             
             dayNames: ['일', '월', '화', '수', '목', '금', '토'],
             
-            // ⭐ 부서별 텍스트 색상 클래스
             deptColors: {
                 '교무': 'dept-교무',
                 '연구': 'dept-연구',
@@ -168,14 +168,27 @@
                 return d;
             },
             
+            // ⭐ 안내사항 동기화 문제 해결
             async loadFromServer() {
-                if (this.isEditing) return;
+                // 편집 중이거나 최근 동기화한 경우 건너뛰기 (1초 이내)
+                const now = Date.now();
+                if (this.isEditing || (now - this.lastSyncTime < 1000)) {
+                    console.log('동기화 건너뜀 (편집 중 또는 너무 빠름)');
+                    return;
+                }
                 
                 try {
                     this.setSyncStatus('syncing');
                     const response = await fetch(this.API_URL + '?action=load&t=' + Date.now());
-                    const data = await response.json();
                     
+                    if (!response.ok) {
+                        throw new Error('서버 응답 오류');
+                    }
+                    
+                    const data = await response.json();
+                    console.log('서버에서 받은 데이터:', data);
+                    
+                    // 이벤트 데이터 처리
                     this.events = (data.events || []).map(item => {
                         let dateStr = item.date;
                         if (typeof dateStr === 'string' && dateStr.includes('T')) {
@@ -191,7 +204,15 @@
                         };
                     });
                     
-                    this.notices = data.notices || {};
+                    // ⭐ 안내사항 데이터 처리 (중요!)
+                    if (data.notices && typeof data.notices === 'object') {
+                        this.notices = data.notices;
+                        console.log('안내사항 로드 성공:', this.notices);
+                    } else {
+                        console.warn('안내사항 데이터 없음');
+                    }
+                    
+                    this.lastSyncTime = now;
                     this.setSyncStatus('success');
                     this.render();
                 } catch (error) {
@@ -203,15 +224,21 @@
             async saveToServer(action, data) {
                 try {
                     this.setSyncStatus('syncing');
-                    await fetch(this.API_URL, {
+                    console.log('서버에 저장:', action, data);
+                    
+                    const response = await fetch(this.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({ action, ...data })
                     });
+                    
+                    console.log('저장 응답:', response.status);
+                    
+                    // 저장 후 2초 뒤 동기화
                     setTimeout(() => {
                         this.isEditing = false;
                         this.loadFromServer();
-                    }, 1000);
+                    }, 2000);
                 } catch (error) {
                     console.error('저장 오류:', error);
                     this.setSyncStatus('error');
@@ -278,23 +305,31 @@
                 if (this.editingTimeout) clearTimeout(this.editingTimeout);
             },
             
+            // ⭐ 안내사항 저장 개선
             async saveNotice(role) {
                 const weekKey = this.getWeekKey();
                 const input = document.getElementById(`notice_${role}`);
                 if (!input) return;
                 
-                if (!this.notices[weekKey]) this.notices[weekKey] = {};
+                // 로컬에 즉시 저장
+                if (!this.notices[weekKey]) {
+                    this.notices[weekKey] = {};
+                }
                 this.notices[weekKey][role] = input.value;
+                
+                console.log('안내사항 로컬 저장:', weekKey, role, input.value);
                 
                 if (this.editingTimeout) clearTimeout(this.editingTimeout);
                 
+                // 3초 후 서버에 저장
                 this.editingTimeout = setTimeout(async () => {
+                    console.log('서버에 안내사항 저장 시도');
                     await this.saveToServer('saveNotice', {
                         weekKey,
                         role,
                         content: input.value
                     });
-                }, 2000);
+                }, 3000);
             },
             
             move(direction) {
@@ -351,7 +386,9 @@
                             ${d}`;
                         
                         if (dayEvents.length > 0) {
-                            html += `<div class="mini-event">${dayEvents[0].title}</div>`;
+                            // ⭐ 앞 3글자만 표시
+                            const shortTitle = dayEvents[0].title.substring(0, 3);
+                            html += `<div class="mini-event">${shortTitle}</div>`;
                         }
                         
                         html += `</div>`;
@@ -397,11 +434,12 @@
                     
                     html += '<div class="mt-1">';
                     
-                    // ⭐ 배경은 통일, 부서명만 색상
+                    // ⭐ 앞 3글자만 표시
                     this.events.filter(e => e.date === dateStr).forEach(e => {
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
-                        html += `<div class="event-item" onclick="event.stopPropagation()">
-                            <span>${e.title} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
+                        const shortTitle = e.title.substring(0, 3);
+                        html += `<div class="event-item" onclick="event.stopPropagation()" title="${e.title}">
+                            <span class="event-title">${shortTitle} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
@@ -446,7 +484,6 @@
                     
                     html += '</div><div class="flex-1">';
                     
-                    // ⭐ 배경은 통일, 부서명만 색상
                     this.events.filter(e => e.date === dateStr).forEach(e => {
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
                         html += `<div class="event-item mb-1 p-2">
@@ -463,6 +500,8 @@
                 const weekKey = this.getWeekKey();
                 const monday = this.getMondayOfWeek();
                 const weekNotices = this.notices[weekKey] || {};
+                
+                console.log('주간 안내사항 렌더링:', weekKey, weekNotices);
                 
                 const noticeHtml = `
                     <div class="notice-section">
@@ -573,7 +612,8 @@
             async init() {
                 await this.loadFromServer();
                 this.render();
-                setInterval(() => this.loadFromServer(), 5000);
+                // 10초마다 자동 동기화
+                setInterval(() => this.loadFromServer(), 10000);
             }
         };
         
