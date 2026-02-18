@@ -24,4 +24,137 @@
             <h1 class="text-xl font-bold cursor-pointer" onclick="location.reload()">🏫 구례중 실시간 학사력</h1>
             <div class="flex gap-2">
                 <button onclick="setView('yearly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm">1년</button>
-                <button onclick="setView('monthly')" class="px-4 py-1.5 bg-indigo-900 rounded
+                <button onclick="setView('monthly')" class="px-4 py-1.5 bg-indigo-900 rounded-full text-sm font-bold border border-indigo-400">월간</button>
+                <button onclick="setView('weekly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm">주간</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 max-w-6xl">
+        <section class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 mt-4 flex flex-wrap gap-3 items-end justify-center">
+            <div class="flex-1 min-w-[150px] text-left">
+                <label class="text-[10px] font-bold text-gray-400 ml-1">날짜 선택</label>
+                <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <div class="flex-[2] min-w-[200px] text-left">
+                <label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
+                <input type="text" id="titleIn" placeholder="행사 내용을 입력하세요" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
+            </div>
+            <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition active:scale-95">일정 저장</button>
+        </section>
+
+        <div class="flex justify-center items-center gap-10 mb-6">
+            <button onclick="shiftTime(-1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❮</button>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px] text-center">데이터 로딩 중...</h2>
+            <button onclick="shiftTime(1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❯</button>
+        </div>
+
+        <div id="viewPort"></div>
+    </main>
+
+    <footer>
+        <p>© 2026 Gurye Middle School. All rights reserved.</p>
+        <p class="font-bold text-indigo-900 mt-1">개발자 Gurye ms. CHOI GWANG CHEUL</p>
+    </footer>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvklrg_REKRoR/exec';
+        let events = [];
+        let curDate = new Date();
+        let curView = 'monthly';
+        let manualReds = new Set();
+        const holidays = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02', '2026-05-05', '2026-05-24', '2026-06-06', '2026-08-15', '2026-09-24', '2026-09-25', '2026-09-26', '2026-10-03', '2026-10-09', '2026-12-25'];
+
+        async function fetchEvents() {
+            try {
+                const res = await fetch(API_URL);
+                events = await res.json();
+                render();
+            } catch(e) { document.getElementById('mainTitle').innerText = "연결 오류!"; }
+        }
+
+        function setView(v) { curView = v; render(); }
+        
+        // 배경색 변경 시 팝업 알림 추가
+        function toggleColor(ds) { 
+            if(!manualReds.has(ds)) {
+                alert("휴업일로 지정합니다.");
+                manualReds.add(ds);
+            } else {
+                manualReds.delete(ds);
+            }
+            render(); 
+        }
+
+        function shiftTime(n) {
+            if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
+            else if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
+            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
+            render();
+        }
+
+        function render() {
+            const port = document.getElementById('viewPort');
+            const head = document.getElementById('mainTitle');
+            const y = curDate.getFullYear(), m = curDate.getMonth();
+            port.innerHTML = '';
+
+            if(curView === 'monthly') {
+                head.innerText = `${y}년 ${m + 1}월`;
+                let html = '<div class="calendar-grid bg-gray-200">';
+                ['일','월','화','수','목','금','토'].forEach((d, i) => html += `<div class="bg-gray-50 p-2 text-center text-xs font-bold ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-500'}">${d}</div>`);
+                const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
+                for(let i=0; i<first; i++) html += '<div class="day-cell bg-gray-50/50"></div>';
+                for(let d=1; d<=last; d++) {
+                    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const isHoliday = holidays.includes(ds) || new Date(y, m, d).getDay() === 0 || new Date(y, m, d).getDay() === 6 || manualReds.has(ds);
+                    html += `<div class="day-cell ${isHoliday ? 'bg-red-custom bg-holiday' : ''}" onclick="toggleColor('${ds}')">
+                        <div class="text-xs font-bold ${isHoliday ? 'text-red-500' : 'text-gray-400'}">${d}</div>`;
+                    events.filter(e => (e.date || e.data) === ds).forEach(e => html += `<div class="event-badge">${e.title}</div>`);
+                    html += `</div>`;
+                }
+                port.innerHTML = html + '</div>';
+            } 
+            else if(curView === 'yearly') {
+                head.innerText = `${y}년 전체 학사`;
+                let html = '<div class="year-wrapper">';
+                for(let i=0; i<12; i++) {
+                    html += `<div class="mini-month"><div class="font-bold text-indigo-600 border-b pb-1 mb-2 text-sm">${i+1}월 일정</div><div class="space-y-1">`;
+                    const mEvents = events.filter(e => new Date(e.date || e.data).getMonth() === i && new Date(e.date || e.data).getFullYear() === y);
+                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.date||a.data)-new Date(b.date||b.data)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${(e.date||e.data).split('-')[2]}일</strong> ${e.title}</div>`);
+                    else html += `<div class="text-[10px] text-gray-300 italic">일정 없음</div>`;
+                    html += '</div></div>';
+                }
+                port.innerHTML = html + '</div>';
+            }
+            else if(curView === 'weekly') {
+                head.innerText = `주간 계획`;
+                let html = '<div class="max-w-2xl mx-auto">';
+                const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
+                for(let i=0; i<7; i++) {
+                    const d = new Date(start); d.setDate(start.getDate() + i);
+                    const ds = d.toISOString().split('T')[0];
+                    const dayName = ['일','월','화','수','목','금','토'][i];
+                    html += `<div class="week-card shadow-sm p-4 mb-3"><div class="w-16 text-center border-r pr-4 mr-4">
+                        <div class="text-xl font-bold ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d.getDate()}</div><div class="text-xs text-gray-400">${dayName}</div></div>
+                        <div class="flex-1 space-y-1">`;
+                    events.filter(e => (e.date || e.data) === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">${e.title}</div>`);
+                    html += `</div></div>`;
+                }
+                port.innerHTML = html + '</div>';
+            }
+        }
+
+        async function handleAdd() {
+            const date = document.getElementById('dateIn').value;
+            const title = document.getElementById('titleIn').value;
+            if(!date || !title) return alert("입력 오류!");
+            document.getElementById('mainTitle').innerText = "저장 중...";
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', id: Date.now().toString(), date, title }) });
+            document.getElementById('titleIn').value = '';
+            fetchEvents();
+        }
+        window.onload = fetchEvents;
+    </script>
+</body>
+</html>
