@@ -127,4 +127,34 @@
                     
                     html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : ''}" onclick="toggleManualHoliday('${ds}')">
                                 <div class="text-xs font-bold ${isSun || holidays2026.includes(ds) ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-300'} mb-2">${d}</div>`;
-                    events.filter(
+                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge">[${e.dept}] ${e.title}</div>`);
+                    html += `</div>`;
+                }
+                port.innerHTML = html + '</div>';
+            } else if(curView === 'weekly') {
+                head.innerText = "주간 계획표";
+                port.innerHTML = '<div class="p-20 text-gray-400">주간 보기 기능을 준비 중입니다...</div>';
+            } else {
+                head.innerText = `${y}년 학사 일정`;
+                port.innerHTML = '<div class="p-20 text-gray-400">1년 전체 일정 보기를 준비 중입니다...</div>';
+            }
+        }
+
+        async function handleAdd() {
+            const date = document.getElementById('dateIn').value;
+            const title = document.getElementById('titleIn').value;
+            const dept = document.getElementById('deptIn').value;
+            if(!date || !title) return alert("입력 확인!");
+            document.getElementById('loading').style.display = 'block';
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', id: Date.now().toString(), date, title, dept }) });
+                document.getElementById('titleIn').value = '';
+                await fetchEvents();
+            } catch(e) { alert("저장 실패"); }
+            document.getElementById('loading').style.display = 'none';
+        }
+
+        window.onload = fetchEvents;
+    </script>
+</body>
+</html>
