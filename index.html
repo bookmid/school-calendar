@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -46,6 +47,7 @@
         .notice-input-group { display: flex; gap: 8px; align-items: center; }
         .notice-input { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }
         .notice-input:focus { border-color: #6366f1; background-color: #f0f9ff; }
+        .notice-input.unsaved { border-color: #f59e0b; background-color: #fffbeb; }
         .notice-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
         .notice-btn-save { background: #3b82f6; color: white; }
         .notice-btn-save:hover { background: #2563eb; }
@@ -100,7 +102,8 @@
             isEditing: false,
             editingTimeout: null,
             lastSyncTime: 0,
-            localNotices: {},
+            localNotices: {},  // ⭐ 즉시 저장용
+            unsavedNotices: new Set(),  // ⭐ 미저장 항목 추적
             
             holidays: [
                 '2026-01-01:신정',
@@ -247,8 +250,13 @@
                         this.isEditing = false;
                         if (action === 'saveNotice') {
                             const weekKey = data.weekKey;
+                            const role = data.role;
+                            // ⭐ 미저장 표시 제거
+                            this.unsavedNotices.delete(`${weekKey}_${role}`);
+                            
+                            // localNotices에서 제거 (서버에 저장됨)
                             if (this.localNotices[weekKey]) {
-                                delete this.localNotices[weekKey][data.role];
+                                delete this.localNotices[weekKey][role];
                                 if (Object.keys(this.localNotices[weekKey]).length === 0) {
                                     delete this.localNotices[weekKey];
                                 }
@@ -316,9 +324,39 @@
                 }
             },
             
+            // ⭐ 입력 즉시 로컬 저장
             handleNoticeInput(role) {
+                const weekKey = this.getWeekKey();
+                const input = document.getElementById(`notice_${role}`);
+                if (!input) return;
+                
+                const value = input.value;
+                
+                // notices에 즉시 저장
+                if (!this.notices[weekKey]) {
+                    this.notices[weekKey] = {};
+                }
+                this.notices[weekKey][role] = value;
+                
+                // localNotices에도 즉시 저장
+                if (!this.localNotices[weekKey]) {
+                    this.localNotices[weekKey] = {};
+                }
+                this.localNotices[weekKey][role] = value;
+                
+                // 미저장 표시 추가
+                if (value.trim()) {
+                    this.unsavedNotices.add(`${weekKey}_${role}`);
+                    input.classList.add('unsaved');
+                } else {
+                    this.unsavedNotices.delete(`${weekKey}_${role}`);
+                    input.classList.remove('unsaved');
+                }
+                
                 this.isEditing = true;
                 this.setSyncStatus('editing');
+                
+                console.log('💾 즉시 저장:', weekKey, role, value);
             },
             
             // ⭐ 저장 버튼 클릭
@@ -328,10 +366,6 @@
                 if (!input) return;
                 
                 const value = input.value.trim();
-                if (!value) {
-                    alert('내용을 입력하세요.');
-                    return;
-                }
                 
                 // 로컬 저장
                 if (!this.notices[weekKey]) {
@@ -344,7 +378,7 @@
                 }
                 this.localNotices[weekKey][role] = value;
                 
-                console.log('💾 저장:', weekKey, role, value);
+                console.log('💾 저장 버튼:', weekKey, role, value);
                 
                 // 서버 저장
                 await this.saveToServer('saveNotice', {
@@ -352,6 +386,9 @@
                     role,
                     content: value
                 });
+                
+                // 미저장 표시 제거
+                input.classList.remove('unsaved');
                 
                 alert('저장되었습니다!');
             },
@@ -367,20 +404,18 @@
                 // 로컬 삭제
                 if (this.notices[weekKey]) {
                     delete this.notices[weekKey][role];
-                    if (Object.keys(this.notices[weekKey]).length === 0) {
-                        delete this.notices[weekKey];
-                    }
                 }
                 
                 if (this.localNotices[weekKey]) {
                     delete this.localNotices[weekKey][role];
-                    if (Object.keys(this.localNotices[weekKey]).length === 0) {
-                        delete this.localNotices[weekKey];
-                    }
                 }
+                
+                // 미저장 표시 제거
+                this.unsavedNotices.delete(`${weekKey}_${role}`);
                 
                 // 입력란 비우기
                 input.value = '';
+                input.classList.remove('unsaved');
                 
                 console.log('🗑️ 삭제:', weekKey, role);
                 
@@ -558,6 +593,8 @@
                 
                 const weekKey = this.getWeekKey();
                 const monday = this.getMondayOfWeek();
+                
+                // ⭐ notices에서 가져오기 (localNotices 이미 병합됨)
                 const weekNotices = this.notices[weekKey] || {};
                 
                 const roles = [
@@ -574,14 +611,16 @@
                 let noticeHtml = `
                     <div class="notice-section">
                         <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${monday.getFullYear()}.${String(monday.getMonth() + 1).padStart(2, '0')}.${String(monday.getDate()).padStart(2, '0')}~)</h3>
+                        <div class="text-xs text-amber-600 mb-2">💡 입력하면 자동 저장됩니다. [저장] 버튼을 누르면 서버에 영구 저장됩니다.</div>
                 `;
                 
                 roles.forEach(role => {
+                    const isUnsaved = this.unsavedNotices.has(`${weekKey}_${role.id}`);
                     noticeHtml += `
                         <div class="notice-item">
-                            <div class="notice-label">${role.label}</div>
+                            <div class="notice-label">${role.label}${isUnsaved ? ' <span style="color:#f59e0b;">●</span>' : ''}</div>
                             <div class="notice-input-group">
-                                <input type="text" id="notice_${role.id}" class="notice-input" 
+                                <input type="text" id="notice_${role.id}" class="notice-input ${isUnsaved ? 'unsaved' : ''}" 
                                        value="${weekNotices[role.id] || ''}" 
                                        oninput="app.handleNoticeInput('${role.id}')"
                                        placeholder="${role.label} 안내사항 입력">
