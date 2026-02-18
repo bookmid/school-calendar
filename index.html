@@ -21,7 +21,7 @@
 <body>
     <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="font-black text-lg tracking-tight">🏫 구례중 학사력</h1>
+            <h1 class="font-black text-lg tracking-tight">🏫 구례중 실시간 학사력</h1>
             <div class="flex gap-1">
                 <button onclick="window.setView('yearly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">1년</button>
                 <button onclick="window.setView('monthly')" class="pc-only px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">월간</button>
@@ -45,7 +45,7 @@
 
         <div class="flex justify-between items-center mb-4 bg-white rounded-xl py-2 shadow-sm border border-slate-100">
             <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❮</button>
-            <h2 id="mainTitle" class="text-xl font-black text-slate-800">데이터 로딩 중...</h2>
+            <h2 id="mainTitle" class="text-xl font-black text-slate-800">로딩 중...</h2>
             <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❯</button>
         </div>
 
@@ -62,8 +62,10 @@
         let curDate = new Date();
         let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
 
+        // 공휴일 데이터 (2026년 기준)
         const kHolidays = {'2026-01-01':'신정','2026-02-16':'설날','2026-02-17':'설날','2026-02-18':'설날','2026-03-01':'삼일절','2026-03-02':'대체공휴일','2026-05-05':'어린이날','2026-05-24':'부처님오신날','2026-05-25':'대체공휴일','2026-06-06':'현충일','2026-08-15':'광복절','2026-08-17':'대체공휴일','2026-09-24':'추석','2026-09-25':'추석','2026-09-26':'추석','2026-09-28':'대체공휴일','2026-10-03':'개천절','2026-10-05':'대체공휴일','2026-10-09':'한글날','2026-12-25':'성탄절'};
 
+        // 날짜를 시차 없이 "YYYY-MM-DD" 문자열로만 만드는 함수
         const toKey = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
         window.render = function() {
@@ -76,9 +78,11 @@
                 head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid">';
                 ['일','월','화','수','목','금','토'].forEach((d,i) => html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-black ${i===0?'text-red-500':i===6?'text-blue-500':'text-slate-400'}">${d}</div>`);
+                
                 const firstDay = new Date(y, m, 1).getDay();
                 const lastDate = new Date(y, m + 1, 0).getDate();
                 for (let i = 0; i < firstDay; i++) html += '<div class="day-cell bg-slate-50/50"></div>';
+                
                 for (let d = 1; d <= lastDate; d++) {
                     const key = toKey(y, m, d);
                     const dayIdx = new Date(y, m, d).getDay();
@@ -138,7 +142,7 @@
         window.setView = (v) => { curView = v; window.render(); };
 
         window.handleAdd = async () => {
-            const date = document.getElementById('inputDate').value;
+            const date = document.getElementById('inputDate').value; // 'YYYY-MM-DD' 스트링 그대로
             const title = document.getElementById('inputTitle').value;
             const dapt = document.getElementById('inputDept').value;
             if (!date || !title) return alert("날짜와 내용을 입력해주세요!");
@@ -158,9 +162,10 @@
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
+                // 핵심: 날짜가 T15:00:00.000Z 처럼 와도 무조건 앞의 10자리(글자)만 사용
                 events = data.map(e => ({ 
                     id: String(e.id), 
-                    date: String(e.date).includes('T') ? e.date.split('T')[0] : e.date, 
+                    date: String(e.date).substring(0, 10), 
                     title: e.title, 
                     dapt: e.dapt 
                 }));
