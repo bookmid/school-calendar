@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -12,17 +13,17 @@
         .day-cell { min-height: 110px; background-color: white; padding: 6px; position: relative; cursor: pointer; }
         .day-cell:hover { background-color: #f8fafc; }
         .day-cell.weekend-cell { background-color: #fef2f2; }
-        .day-cell.holiday-cell { background-color: #fef2f2; }
-        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; color: white; font-weight: 700; display: flex; justify-content: space-between; }
-        .event-교무 { background-color: #3b82f6; border-left: 3px solid #1e40af; }
-        .event-연구 { background-color: #8b5cf6; border-left: 3px solid #6d28d9; }
-        .event-학생 { background-color: #10b981; border-left: 3px solid #059669; }
-        .event-창의 { background-color: #f59e0b; border-left: 3px solid #d97706; }
-        .event-행정 { background-color: #14b8a6; border-left: 3px solid #0d9488; }
+        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #94a3b8; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
+        .dept-badge { font-weight: 900; margin-left: 4px; }
+        .dept-교무 { color: #3b82f6; }
+        .dept-연구 { color: #8b5cf6; }
+        .dept-학생 { color: #10b981; }
+        .dept-창의 { color: #f59e0b; }
+        .dept-행정 { color: #14b8a6; }
         .holiday-badge { font-size: 10px; color: #dc2626; font-weight: 700; margin-top: 2px; }
         .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
-        .del-x { color: white; cursor: pointer; margin-left: 4px; opacity: 0.8; }
-        .del-x:hover { opacity: 1; }
+        .del-x { color: #ef4444; cursor: pointer; margin-left: 8px; font-weight: bold; }
+        .del-x:hover { color: #dc2626; }
         .year-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .year-month { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; }
@@ -93,7 +94,6 @@
             isEditing: false,
             editingTimeout: null,
             
-            // ⭐ 2026년 대한민국 공휴일 (정확한 날짜!)
             holidays: [
                 '2026-01-01:신정',
                 '2026-02-16:설날연휴',
@@ -116,12 +116,13 @@
             
             dayNames: ['일', '월', '화', '수', '목', '금', '토'],
             
+            // ⭐ 부서별 텍스트 색상 클래스
             deptColors: {
-                '교무': 'event-교무',
-                '연구': 'event-연구',
-                '학생': 'event-학생',
-                '창의': 'event-창의',
-                '행정': 'event-행정'
+                '교무': 'dept-교무',
+                '연구': 'dept-연구',
+                '학생': 'dept-학생',
+                '창의': 'dept-창의',
+                '행정': 'dept-행정'
             },
             
             getHoliday(dateStr) {
@@ -396,10 +397,11 @@
                     
                     html += '<div class="mt-1">';
                     
+                    // ⭐ 배경은 통일, 부서명만 색상
                     this.events.filter(e => e.date === dateStr).forEach(e => {
-                        const colorClass = this.deptColors[e.dapt] || 'event-교무';
-                        html += `<div class="event-item ${colorClass}" onclick="event.stopPropagation()">
-                            <span>${e.title} (${e.dapt})</span>
+                        const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
+                        html += `<div class="event-item" onclick="event.stopPropagation()">
+                            <span>${e.title} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
@@ -444,10 +446,11 @@
                     
                     html += '</div><div class="flex-1">';
                     
+                    // ⭐ 배경은 통일, 부서명만 색상
                     this.events.filter(e => e.date === dateStr).forEach(e => {
-                        const colorClass = this.deptColors[e.dapt] || 'event-교무';
-                        html += `<div class="event-item ${colorClass} mb-1 p-2">
-                            <span>${e.title} (${e.dapt})</span>
+                        const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
+                        html += `<div class="event-item mb-1 p-2">
+                            <span>${e.title} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
