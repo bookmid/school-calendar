@@ -136,6 +136,7 @@
             viewMode: 'weekly',
             isSyncing: false,
             isEditing: false,
+            days: ['일', '월', '화', '수', '목', '금', '토'],
             
             holidays: [
                 '2026-01-01:신정', '2026-02-16:설날연휴', '2026-02-17:설날', '2026-02-18:설날연휴',
@@ -146,7 +147,7 @@
             ],
             
             getHoliday(dateStr) {
-                const found = this.holidays.find(h => h.startsWith(dateStr + ':'));
+                const found = this.holidays.find(h => h.startsWith(dateStr));
                 return found ? found.split(':')[1] : null;
             },
 
@@ -302,8 +303,10 @@
                 const modalDate = document.getElementById('modalDate');
                 const modalContent = document.getElementById('modalContent');
                 const holiday = this.getHoliday(dateStr);
+                const d = new Date(dateStr);
+                const dayOfWeek = this.days[d.getDay()];
                 
-                modalDate.textContent = dateStr + (holiday ? ` (${holiday})` : '');
+                modalDate.textContent = `${dateStr}(${dayOfWeek})` + (holiday ? ` (${holiday})` : '');
                 modalContent.innerHTML = "";
                 
                 const dayEvents = this.events.filter(e => e.date === dateStr && !e.id.startsWith('notice_'));
@@ -336,7 +339,7 @@
                 let html = '<div class="year-view">';
                 for (let m = 0; m < 12; m++) {
                     html += `<div class="year-month"><div class="year-month-title">${year}년 ${m + 1}월</div><div class="mini-calendar">`;
-                    ['일','월','화','수','목','금','토'].forEach(w => html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`);
+                    this.days.forEach(w => html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`);
                     const first = new Date(year, m, 1).getDay();
                     const last = new Date(year, m + 1, 0).getDate();
                     for (let i = 0; i < first; i++) html += '<div></div>';
@@ -361,7 +364,7 @@
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 let html = '<div class="calendar-grid">';
-                ['일','월','화','수','목','금','토'].forEach(w => html += `<div class="bg-slate-50 p-2 text-center text-[10px] md:text-[11px] font-bold text-slate-400">${w}</div>`);
+                this.days.forEach(w => html += `<div class="bg-slate-50 p-2 text-center text-[10px] md:text-[11px] font-bold text-slate-400">${w}</div>`);
                 const first = new Date(year, month, 1).getDay();
                 const last = new Date(year, month + 1, 0).getDate();
                 for (let i = 0; i < first; i++) html += '<div class="day-cell bg-slate-50/30"></div>';
@@ -373,8 +376,7 @@
                     const isWeekend = dayIdx === 0 || dayIdx === 6;
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
                     const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
-                    const weekendClass = (isWeekend || holiday) ? 'weekend-cell' : '';
-                    html += `<div class="day-cell ${weekendClass} ${holidayClass}" onclick="app.showDetail('${dateStr}')">
+                    html += `<div class="day-cell ${holidayClass}" onclick="app.showDetail('${dateStr}')">
                         <div class="text-[10px] md:text-[11px] font-black ${colorClass}">${d}</div>`;
                     if (holiday) html += `<div class="holiday-badge">${holiday}</div>`;
                     html += '<div class="mt-1">';
@@ -409,8 +411,11 @@
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                     const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
                     const weekendClass = (isWeekend || holiday) ? 'weekend-bg' : '';
+                    const dayOfWeek = this.days[d.getDay()];
+                    const colorClass = d.getDay() === 0 || holiday ? 'text-sun' : (d.getDay() === 6 ? 'text-sat' : 'text-indigo-900');
+                    
                     html += `<div class="week-item ${weekendClass} ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm" onclick="app.showDetail('${dStr}')">
-                        <div class="w-16 md:w-24 font-black text-indigo-900 border-r mr-4">${d.getDate()}일`;
+                        <div class="w-16 md:w-24 font-black ${colorClass} border-r mr-4">${d.getDate()}일(${dayOfWeek})`;
                     if (holiday) html += `<div class="holiday-badge text-[9px]">${holiday}</div>`;
                     html += '</div><div class="flex-1">';
                     this.events.filter(e => e.date === dStr && !e.id.startsWith('notice_')).forEach(e => {
@@ -439,7 +444,7 @@
                     viewPort.innerHTML = this.renderMonthly();
                     noticePort.classList.add('hidden');
                 } else {
-                    titleText.textContent = `${year}년 ${month}월 주간`;
+                    titleText.textContent = `${year}년 ${month}월 주간계획`;
                     viewPort.innerHTML = this.renderWeekly();
                     noticePort.classList.remove('hidden');
                 }
@@ -464,4 +469,3 @@
     </script>
 </body>
 </html>
-
