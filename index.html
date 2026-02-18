@@ -46,6 +46,13 @@
         .notice-input-group { display: flex; gap: 8px; align-items: center; }
         .notice-input { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }
         .notice-input:focus { border-color: #6366f1; background-color: #f0f9ff; }
+        /* ⭐ 입력된 칸: 연한 녹색 + 진한 글자 */
+        .notice-input.has-content { 
+            background-color: #e8f5e9; 
+            border-color: #66bb6a; 
+            font-weight: 700;
+            color: #1b5e20;
+        }
         .notice-input.unsaved { border-color: #f59e0b; background-color: #fffbeb; }
         .notice-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
         .notice-btn-save { background: #3b82f6; color: white; }
@@ -174,20 +181,26 @@
                 return d;
             },
             
-            // ⭐ 서버에서 로드 시 기존 데이터 보존
+            // ⭐ 서버에서 로드 - 강화된 병합
             async loadFromServer() {
                 const now = Date.now();
                 if (this.isEditing || (now - this.lastSyncTime < 1000)) {
-                    console.log('⏸️ 동기화 건너뜀');
                     return;
                 }
                 
                 try {
                     this.setSyncStatus('syncing');
-                    const response = await fetch(this.API_URL + '?action=load&t=' + Date.now());
+                    console.log('📥 서버에서 로드 시작...');
+                    
+                    const response = await fetch(this.API_URL + '?action=load&t=' + Date.now(), {
+                        method: 'GET',
+                        headers: {
+                            'Cache-Control': 'no-cache'
+                        }
+                    });
                     
                     if (!response.ok) {
-                        throw new Error('서버 응답 오류');
+                        throw new Error(`서버 응답 오류: ${response.status}`);
                     }
                     
                     const data = await response.json();
@@ -209,28 +222,21 @@
                         };
                     });
                     
-                    // ⭐ 안내사항 처리 - 기존 데이터 보존하면서 병합
+                    // ⭐ 안내사항 병합 - 서버 데이터 우선
                     if (data.notices && typeof data.notices === 'object') {
-                        const serverNotices = data.notices;
+                        console.log('📋 서버 안내사항:', data.notices);
                         
-                        // 기존 notices의 모든 데이터를 유지하면서 서버 데이터 추가
-                        for (const weekKey in serverNotices) {
-                            if (!this.notices[weekKey]) {
-                                this.notices[weekKey] = {};
-                            }
-                            // 서버 데이터로 업데이트 (서버가 최신)
-                            this.notices[weekKey] = {
-                                ...this.notices[weekKey],
-                                ...serverNotices[weekKey]
-                            };
-                        }
+                        // 서버 데이터를 그대로 사용 (서버가 최신)
+                        this.notices = { ...data.notices };
                         
-                        console.log('✅ 병합 완료:', this.notices);
+                        console.log('✅ 안내사항 업데이트 완료:', this.notices);
                     }
                     
                     this.lastSyncTime = now;
                     this.setSyncStatus('success');
                     this.render();
+                    
+                    console.log('✅ 로드 완료');
                 } catch (error) {
                     console.error('❌ 로드 오류:', error);
                     this.setSyncStatus('error');
@@ -240,22 +246,30 @@
             async saveToServer(action, data) {
                 try {
                     this.setSyncStatus('syncing');
-                    console.log('💾 서버 저장:', action, data);
+                    console.log('💾 서버 저장 시작:', action, data);
                     
                     const response = await fetch(this.API_URL, {
                         method: 'POST',
-                        headers: { 'Content-Type': 'text/plain' },
+                        headers: { 
+                            'Content-Type': 'text/plain',
+                            'Cache-Control': 'no-cache'
+                        },
                         body: JSON.stringify({ action, ...data })
                     });
+                    
+                    if (!response.ok) {
+                        throw new Error(`서버 응답 오류: ${response.status}`);
+                    }
                     
                     const result = await response.json();
                     console.log('✅ 저장 응답:', result);
                     
-                    // ⭐ 저장 후 1초 뒤 동기화 (데이터 유지)
-                    setTimeout(() => {
+                    // ⭐ 저장 후 즉시 서버에서 재로드
+                    setTimeout(async () => {
                         this.isEditing = false;
-                        this.loadFromServer();
-                    }, 1000);
+                        console.log('🔄 저장 후 재로드...');
+                        await this.loadFromServer();
+                    }, 1500);
                     
                     return result;
                 } catch (error) {
@@ -319,7 +333,7 @@
                 }
             },
             
-            // ⭐ 입력 즉시 로컬 저장
+            // ⭐ 입력 즉시 로컬 저장 + 스타일 업데이트
             handleNoticeInput(role) {
                 const weekKey = this.getWeekKey();
                 const input = document.getElementById(`notice_${role}`);
@@ -333,18 +347,16 @@
                 }
                 this.notices[weekKey][role] = value;
                 
-                // 미저장 표시
+                // ⭐ 입력 상태에 따라 스타일 변경
+                input.classList.remove('has-content', 'unsaved');
                 if (value.trim()) {
-                    input.classList.add('unsaved');
-                } else {
-                    input.classList.remove('unsaved');
+                    input.classList.add('has-content', 'unsaved');
                 }
                 
                 this.isEditing = true;
                 this.setSyncStatus('editing');
                 
                 console.log('💾 입력 저장:', weekKey, role, value);
-                console.log('📊 현재 notices:', this.notices);
             },
             
             // ⭐ 저장 버튼 클릭
@@ -361,8 +373,7 @@
                 }
                 this.notices[weekKey][role] = value;
                 
-                console.log('💾 저장 버튼 클릭:', weekKey, role, value);
-                console.log('📊 저장 전 notices:', this.notices);
+                console.log('💾 [저장] 버튼:', weekKey, role, value);
                 
                 try {
                     // 서버 저장
@@ -372,13 +383,16 @@
                         content: value
                     });
                     
-                    // 미저장 표시 제거
+                    // ⭐ 스타일 업데이트
                     input.classList.remove('unsaved');
+                    if (value) {
+                        input.classList.add('has-content');
+                    } else {
+                        input.classList.remove('has-content');
+                    }
                     
-                    console.log('✅ 서버 저장 성공');
-                    alert('저장되었습니다!');
+                    alert('저장되었습니다! 다른 기기에서도 확인할 수 있습니다.');
                 } catch (error) {
-                    console.error('❌ 저장 실패:', error);
                     alert('저장에 실패했습니다. 다시 시도해주세요.');
                 }
             },
@@ -399,11 +413,9 @@
                     }
                 }
                 
-                // 입력란 비우기
+                // 입력란 비우기 + 스타일 제거
                 input.value = '';
-                input.classList.remove('unsaved');
-                
-                console.log('🗑️ 삭제:', weekKey, role);
+                input.classList.remove('has-content', 'unsaved');
                 
                 // 서버에 빈 값으로 저장
                 await this.saveToServer('saveNotice', {
@@ -427,8 +439,6 @@
             },
             
             setView(mode) {
-                console.log('🔄 뷰 전환:', this.viewMode, '→', mode);
-                console.log('📊 뷰 전환 전 notices:', this.notices);
                 this.viewMode = mode;
                 this.render();
             },
@@ -584,7 +594,7 @@
                 const weekNotices = this.notices[weekKey] || {};
                 
                 console.log('🔍 렌더링 - 주간:', weekKey);
-                console.log('📝 렌더링 - 안내사항:', weekNotices);
+                console.log('📝 안내사항:', weekNotices);
                 
                 const roles = [
                     { id: 'principal', label: '🎓 교장' },
@@ -600,16 +610,19 @@
                 let noticeHtml = `
                     <div class="notice-section">
                         <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${monday.getFullYear()}.${String(monday.getMonth() + 1).padStart(2, '0')}.${String(monday.getDate()).padStart(2, '0')}~)</h3>
-                        <div class="text-xs text-amber-600 mb-2">💡 입력하면 자동 저장됩니다. [저장] 버튼을 누르면 서버에 영구 저장됩니다.</div>
+                        <div class="text-xs text-emerald-600 mb-2">💡 입력하면 자동 저장됩니다. [저장] 버튼을 누르면 다른 기기에서도 확인할 수 있습니다.</div>
                 `;
                 
                 roles.forEach(role => {
+                    const value = weekNotices[role.id] || '';
+                    const hasContent = value.trim() ? 'has-content' : '';
+                    
                     noticeHtml += `
                         <div class="notice-item">
                             <div class="notice-label">${role.label}</div>
                             <div class="notice-input-group">
-                                <input type="text" id="notice_${role.id}" class="notice-input" 
-                                       value="${weekNotices[role.id] || ''}" 
+                                <input type="text" id="notice_${role.id}" class="notice-input ${hasContent}" 
+                                       value="${value}" 
                                        oninput="app.handleNoticeInput('${role.id}')"
                                        placeholder="${role.label} 안내사항 입력">
                                 <button class="notice-btn notice-btn-save" onclick="app.saveNoticeBtn('${role.id}')">저장</button>
@@ -650,9 +663,16 @@
             },
             
             async init() {
+                console.log('🚀 초기화 시작');
                 await this.loadFromServer();
                 this.render();
-                setInterval(() => this.loadFromServer(), 15000);
+                // ⭐ 10초마다 자동 동기화
+                setInterval(() => {
+                    if (!this.isEditing) {
+                        console.log('🔄 자동 동기화...');
+                        this.loadFromServer();
+                    }
+                }, 10000);
             }
         };
         
