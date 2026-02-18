@@ -11,22 +11,20 @@
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 12px; overflow: hidden; border: 1px solid #e2e8f0; }
         .day-cell { min-height: 120px; background-color: white; padding: 10px; text-align: left; transition: 0.2s; cursor: pointer; }
         .day-cell:hover { filter: brightness(0.95); }
-        /* 연한 빨간색 배경 클래스 */
-        .bg-holiday { background-color: #fff1f2 !important; } 
+        .bg-holiday { background-color: #fff1f2 !important; } /* 연한 빨간색 배경 */
         .event-badge { font-size: 11px; padding: 4px 8px; margin-top: 4px; border-radius: 6px; background-color: #eef2ff; border-left: 4px solid #4f46e5; color: #3730a3; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .loading-bar { position: fixed; top: 0; left: 0; width: 100%; height: 4px; background: #4f46e5; display: none; z-index: 9999; animation: loading 1.5s infinite; }
         @keyframes loading { 0% { transform: translateX(-100%); } 100% { transform: translateX(100%); } }
-        @media (max-width: 640px) { .day-cell { min-height: 80px; padding: 4px; } .event-badge { font-size: 9px; } }
     </style>
 </head>
 <body>
     <div id="loading" class="loading-bar"></div>
     <nav class="bg-indigo-800 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-bold flex items-center gap-2 cursor-pointer" onclick="location.reload()">🏫 구례중학교 실시간 학사력</h1>
+            <h1 class="text-xl font-bold cursor-pointer" onclick="location.reload()">🏫 구례중학교 실시간 학사력</h1>
             <div class="flex gap-2">
                 <button onclick="setView('yearly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-600 rounded-lg text-sm transition">1년</button>
-                <button onclick="setView('monthly')" class="px-3 py-1 bg-indigo-900 rounded-lg text-sm font-bold border border-indigo-400">월간</button>
+                <button onclick="setView('monthly')" class="px-3 py-1 bg-indigo-900 rounded-lg text-sm font-bold border border-indigo-400 transition">월간</button>
                 <button onclick="setView('weekly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-600 rounded-lg text-sm transition">주간</button>
             </div>
         </div>
@@ -56,7 +54,7 @@
 
         <div class="flex justify-center items-center gap-12 mb-8">
             <button onclick="shiftTime(-1)" class="text-indigo-300 hover:text-indigo-600 text-4xl font-bold transition">❮</button>
-            <h2 id="mainTitle" class="text-3xl font-black text-gray-800">2026년 2월</h2>
+            <h2 id="mainTitle" class="text-3xl font-black text-gray-800 min-w-[200px]">연결 중...</h2>
             <button onclick="shiftTime(1)" class="text-indigo-300 hover:text-indigo-600 text-4xl font-bold transition">❯</button>
         </div>
 
@@ -64,21 +62,16 @@
     </main>
 
     <script>
+        // 최신 주소로 적용되어 있습니다.
         const API_URL = 'https://script.google.com/macros/s/AKfycbx2A8FSDG45mqzBeJadQR9K7hWz3x11EcZqv80QR0SuE-R-ST210CIwgl7aVp21ezYq/exec'; 
         
         let events = [];
-        let curDate = new Date(2026, 1, 1); // 2026년 2월 기준 시작
+        let curDate = new Date();
         let curView = 'monthly';
         
-        // 2026년 대한민국 공휴일 목록 (YYYY-MM-DD 형식)
-        const holidays2026 = [
-            '2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02', 
-            '2026-05-05', '2026-05-24', '2026-06-06', '2026-08-15', '2026-09-24', '2026-09-25', 
-            '2026-09-26', '2026-10-03', '2026-10-09', '2026-12-25'
-        ];
-
-        // 사용자가 수동으로 변경한 배경색 저장 (임시 유지용)
-        let manualHolidays = new Set();
+        // 2026년 공휴일 (YYYY-MM-DD)
+        const holidays2026 = ['2026-01-01', '2026-02-16', '2026-02-17', '2026-02-18', '2026-03-01', '2026-03-02', '2026-05-05', '2026-05-24', '2026-06-06', '2026-08-15', '2026-09-24', '2026-09-25', '2026-09-26', '2026-10-03', '2026-10-09', '2026-12-25'];
+        let manualHolidays = new Set(); // 사용자 지정 배경색 저장
 
         async function fetchEvents() {
             document.getElementById('loading').style.display = 'block';
@@ -86,8 +79,16 @@
                 const res = await fetch(API_URL);
                 events = await res.json();
                 render();
-            } catch(e) { console.error("연결 오류"); }
+            } catch(e) { 
+                document.getElementById('viewPort').innerText = "데이터 연결 실패!";
+            }
             document.getElementById('loading').style.display = 'none';
+        }
+
+        // 버튼 클릭 시 실행되는 함수 (setView) 수정 완료
+        function setView(v) {
+            curView = v;
+            render();
         }
 
         function toggleManualHoliday(dateStr) {
@@ -96,11 +97,10 @@
             render();
         }
 
-        function setView(v) { curView = v; render(); }
-
         function shiftTime(n) {
             if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
             else if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
+            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
             render();
         }
 
@@ -108,13 +108,12 @@
             const port = document.getElementById('viewPort');
             const head = document.getElementById('mainTitle');
             const y = curDate.getFullYear(), m = curDate.getMonth();
-            head.innerText = `${y}년 ${m + 1}월`;
+            port.innerHTML = '';
 
             if(curView === 'monthly') {
+                head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid w-full">';
-                ['일','월','화','수','목','금','토'].forEach((d,i) => 
-                    html += `<div class="bg-gray-50 p-3 font-bold text-sm ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-500'}">${d}</div>`
-                );
+                ['일','월','화','수','목','금','토'].forEach((d,i) => html += `<div class="bg-gray-50 p-3 font-bold text-sm ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-500'}">${d}</div>`);
                 
                 const first = new Date(y, m, 1).getDay(), last = new Date(y, m + 1, 0).getDate();
                 for(let i=0; i<first; i++) html += '<div class="day-cell bg-gray-50/30"></div>';
@@ -128,9 +127,4 @@
                     
                     html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : ''}" onclick="toggleManualHoliday('${ds}')">
                                 <div class="text-xs font-bold ${isSun || holidays2026.includes(ds) ? 'text-red-500' : isSat ? 'text-blue-500' : 'text-gray-300'} mb-2">${d}</div>`;
-                    events.filter(e => e.date === ds).forEach(e => 
-                        html += `<div class="event-badge">[${e.dept}] ${e.title}</div>`
-                    );
-                    html += `</div>`;
-                }
-                port.innerHTML = html
+                    events.filter(
