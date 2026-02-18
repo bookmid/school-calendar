@@ -9,6 +9,8 @@
 .notice-green{background:#d1fae5!important;border-color:#10b981!important;font-weight:700!important;}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;}
 .modal.show{display:flex;align-items:center;justify-content:center;}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
+.fade-in{animation:fadeIn 0.3s ease;}
 </style>
 </head>
 <body class="bg-gray-50 p-4">
@@ -66,58 +68,59 @@ var API="https://script.google.com/macros/s/AKfycbzBzEu_8Xo_EOIcFX48-Lj6k5TehW6g
 var events=[],notices={},currentDate=new Date(),viewMode="week",isAdmin=false,loading=false;
 var dayNames=["일","월","화","수","목","금","토"];
 
+function setSyncStatus(text,color){
+var el=document.getElementById("sync");
+el.textContent=text;
+if(color)el.style.background=color;
+else el.style.background="#4f46e5";
+}
+
 function load(){
 if(loading)return;
 loading=true;
-document.getElementById("sync").textContent="● 로딩 중...";
-console.log("📥 데이터 로드 시작");
+setSyncStatus("● 로딩...");
+console.log("📥 로드 시작");
 
 fetch(API+"?action=load&t="+Date.now())
 .then(function(r){
-console.log("📥 응답 상태:",r.status);
+console.log("📥 응답:",r.status);
 if(!r.ok)throw new Error("HTTP "+r.status);
 return r.json();
 })
 .then(function(data){
-console.log("✅ 받은 데이터:",data);
+console.log("✅ 데이터:",data);
 events=data.events||[];
 notices=data.notices||{};
-document.getElementById("sync").textContent="● 완료 ("+events.length+"건)";
+setSyncStatus("● 완료 ("+events.length+"건)","#10b981");
 render();
 loading=false;
 })
 .catch(function(e){
-console.error("❌ 로드 실패:",e);
-document.getElementById("sync").textContent="● 오류";
+console.error("❌ 오류:",e);
+setSyncStatus("● 오류","#ef4444");
 loading=false;
 });
 }
 
-function save(action,data){
-console.log("💾 저장 시작:",action,data);
-document.getElementById("sync").textContent="● 저장 중...";
+function saveToServer(action,data){
+console.log("💾 서버 저장:",action);
+setSyncStatus("● 저장 중...","#f59e0b");
 
-return fetch(API,{
+fetch(API,{
 method:"POST",
 body:JSON.stringify(Object.assign({action:action},data))
 })
 .then(function(r){return r.json();})
 .then(function(result){
 console.log("✅ 저장 완료:",result);
-if(result.success){
-document.getElementById("sync").textContent="● 저장됨";
+setSyncStatus("● 저장됨","#10b981");
 setTimeout(function(){
-console.log("🔄 서버에서 다시 로드...");
 load();
-},500);
-}else{
-throw new Error(result.error||"저장 실패");
-}
+},1000);
 })
 .catch(function(e){
-console.error("❌ 저장 실패:",e);
-alert("저장 실패: "+e.message);
-document.getElementById("sync").textContent="● 저장 오류";
+console.error("❌ 저장 오류:",e);
+setSyncStatus("● 오류","#ef4444");
 });
 }
 
@@ -150,7 +153,7 @@ if(evs.length==0){
 html+="<div class='text-gray-400 text-sm mt-1'>일정 없음</div>";
 }else{
 evs.forEach(function(e){
-html+="<div class='bg-indigo-50 p-2 rounded mt-1 text-sm border-l-4 border-indigo-600'>";
+html+="<div class='bg-indigo-50 p-2 rounded mt-1 text-sm border-l-4 border-indigo-600 fade-in'>";
 html+="<span class='font-bold'>"+e.title+"</span>";
 html+=" <span class='text-indigo-600'>("+e.dapt+")</span>";
 html+="</div>";
@@ -185,7 +188,7 @@ var evs=events.filter(function(e){return e.date==ds;});
 var dayIdx=new Date(y,m,d).getDay();
 var isWeekend=dayIdx==0||dayIdx==6;
 
-html+="<div class='border p-2 min-h-24 cursor-pointer "+(isWeekend?"bg-red-50":"bg-white")+"' onclick='showDetail(\""+ds+"\")'>";
+html+="<div class='border p-2 min-h-24 cursor-pointer hover:bg-gray-50 "+(isWeekend?"bg-red-50":"bg-white")+"' onclick='showDetail(\""+ds+"\")'>";
 html+="<div class='text-sm font-bold "+(dayIdx==0?"text-red-600":dayIdx==6?"text-blue-600":"text-gray-700")+"'>"+d+"</div>";
 
 evs.forEach(function(e){
@@ -205,8 +208,8 @@ var y=currentDate.getFullYear();
 var html="<div class='grid grid-cols-1 md:grid-cols-3 gap-4'>";
 
 for(var m=0;m<12;m++){
-html+="<div class='border rounded-lg p-3'>";
-html+="<div class='font-bold mb-2 text-center'>"+(m+1)+"월</div>";
+html+="<div class='border rounded-lg p-3 bg-white'>";
+html+="<div class='font-bold mb-2 text-center text-indigo-900'>"+(m+1)+"월</div>";
 html+="<div class='grid grid-cols-7 gap-1 text-xs'>";
 
 ["일","월","화","수","목","금","토"].forEach(function(d){
@@ -224,7 +227,7 @@ var evs=events.filter(function(e){return e.date==ds;});
 var dayIdx=new Date(y,m,d).getDay();
 var hasEvent=evs.length>0;
 
-html+="<div class='text-center p-1 rounded cursor-pointer "+(hasEvent?"bg-indigo-100 font-bold":"")+"' onclick='showDetail(\""+ds+"\")' title='"+evs.map(function(e){return e.title;}).join(", ")+"'>"+d+"</div>";
+html+="<div class='text-center p-1 rounded cursor-pointer hover:bg-gray-100 "+(hasEvent?"bg-indigo-100 font-bold text-indigo-900":"")+"' onclick='showDetail(\""+ds+"\")' title='"+evs.map(function(e){return e.title;}).join(", ")+"'>"+d+"</div>";
 }
 
 html+="</div></div>";
@@ -256,12 +259,36 @@ var val=wn[r.id]||"";
 html+="<div class='mb-3'>";
 html+="<div class='font-bold text-sm mb-1'>"+r.n+"</div>";
 html+="<div class='flex gap-2'>";
-html+="<input type='text' id='n_"+r.id+"' value='"+val.replace(/'/g,"&apos;")+"' class='flex-1 border p-2 rounded text-sm "+(val?"notice-green":"")+"' placeholder='"+r.n+" 안내사항 입력'>";
-html+="<button onclick='saveNotice(\""+r.id+"\")' class='bg-indigo-600 text-white px-4 rounded text-sm font-bold whitespace-nowrap'>저장</button>";
+html+="<input type='text' id='n_"+r.id+"' value='"+val.replace(/'/g,"&apos;")+"' class='flex-1 border p-2 rounded text-sm "+(val?"notice-green":"")+"' placeholder='"+r.n+" 안내사항 입력' onblur='autoSaveNotice(\""+r.id+"\")'>";
 html+="</div></div>";
 });
 
 document.getElementById("noticeList").innerHTML=html;
+}
+
+function autoSaveNotice(r){
+var wk=getWeekKey();
+var el=document.getElementById("n_"+r);
+if(!el)return;
+
+var val=el.value.trim();
+var oldVal=(notices[wk]&&notices[wk][r])||"";
+
+if(val==oldVal)return;
+
+console.log("💾 안내사항 자동 저장:",r,val);
+
+if(!notices[wk])notices[wk]={};
+notices[wk][r]=val;
+
+if(val)el.classList.add("notice-green");
+else el.classList.remove("notice-green");
+
+saveToServer("saveNotice",{
+weekKey:wk,
+role:r,
+content:val
+});
 }
 
 function showDetail(ds){
@@ -292,23 +319,6 @@ return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
 
 function pad(n){return String(n).padStart(2,"0");}
 
-function saveNotice(r){
-var wk=getWeekKey();
-var el=document.getElementById("n_"+r);
-if(!el)return;
-
-var val=el.value.trim();
-console.log("💾 안내사항 저장:",r,val);
-
-save("saveNotice",{
-weekKey:wk,
-role:r,
-content:val
-}).then(function(){
-alert("✅ 저장되었습니다!");
-});
-}
-
 document.getElementById("btnAdmin").onclick=function(){
 document.getElementById("loginModal").classList.add("show");
 };
@@ -320,7 +330,6 @@ if(id=="admin"&&pw=="1234"){
 isAdmin=true;
 document.getElementById("adminBadge").style.display="block";
 document.getElementById("loginModal").classList.remove("show");
-alert("✅ 관리자 로그인 성공!");
 }else{
 alert("❌ 비밀번호가 틀렸습니다.");
 }
@@ -369,21 +378,23 @@ title:t,
 dapt:dept
 };
 
-console.log("💾 일정 저장:",newEvent);
+console.log("💾 일정 추가 (즉시 반영):",newEvent);
 
-save("addEvent",newEvent).then(function(){
+events.push(newEvent);
+render();
+
 document.getElementById("inDate").value="";
 document.getElementById("inTitle").value="";
-alert("✅ 일정이 저장되었습니다!");
-});
+
+saveToServer("addEvent",newEvent);
 };
 
 document.getElementById("closeDetail").onclick=function(){
 document.getElementById("detailModal").classList.remove("show");
 };
 
-console.log("🚀 구례중 학사력 시스템 시작");
-console.log("📍 API URL:",API);
+console.log("🚀 구례중 학사력 시스템");
+console.log("📍 API:",API);
 load();
 setInterval(function(){if(!loading)load();},30000);
 </script>
