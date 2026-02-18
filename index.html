@@ -10,17 +10,20 @@
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 15px; overflow: hidden; border: 1px solid #e2e8f0; }
         .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; }
-        @media (max-width: 640px) { .day-cell { min-height: 95px; padding: 4px; } }
-        .day-cell:hover { background-color: #f1f5f9; }
         .bg-holiday { background-color: #fff1f2 !important; } 
-        .event-badge { font-size: 10px; padding: 2px 5px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; display: flex; justify-content: space-between; align-items: center; line-height: 1.2; }
+        .bg-sat { background-color: #f0f7ff !important; }
+        .event-badge { font-size: 10px; padding: 2px 5px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
         .holiday-badge { background-color: #ffe4e6; border-left: 2px solid #f43f5e; color: #9f1239; }
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 5px; font-size: 13px; padding: 0 2px; flex-shrink: 0; }
+        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 5px; font-size: 13px; flex-shrink: 0; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px; outline: none; width: 100%; font-size: 14px; }
-        .nav-arrow { font-size: 1.8rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; padding: 0 20px; user-select: none; }
-        .nav-arrow:hover { color: #4f46e5; }
-        /* 제목 줄바꿈 시 중앙 정렬 유지 */
-        #mainTitle { line-height: 1.3; }
+        .nav-arrow { font-size: 1.8rem; color: #cbd5e1; cursor: pointer; padding: 0 20px; }
+        
+        /* 모바일 전용 스타일 */
+        @media (max-width: 640px) {
+            .btn-monthly { display: none !important; } /* 모바일에서 월간 버튼 숨김 */
+            #mainTitle { font-size: 1.25rem; line-height: 1.4; }
+            .day-cell { min-height: 90px; padding: 4px; }
+        }
     </style>
 </head>
 <body>
@@ -28,4 +31,91 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-black">🏫 구례중 학사력</h1>
             <div class="flex gap-2">
-                <button onclick="changeView('yearly')" class="px-3 py-1 bg-
+                <button onclick="changeView('yearly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">1년</button>
+                <button onclick="changeView('monthly')" class="btn-monthly px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">월간</button>
+                <button onclick="changeView('weekly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">주간</button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="container mx-auto p-4 max-w-6xl">
+        <section class="bg-white p-6 rounded-[1.5rem] shadow-sm mb-6 border border-gray-100 flex flex-col md:flex-row gap-4 items-end">
+            <div class="w-full md:flex-1"><span class="text-xs font-bold text-indigo-400 ml-1">날짜</span><input type="date" id="inputDate"></div>
+            <div class="w-full md:flex-[2]"><span class="text-xs font-bold text-indigo-400 ml-1">행사 내용</span><input type="text" id="inputTitle" placeholder="내용 입력"></div>
+            <div class="w-full md:flex-1">
+                <span class="text-xs font-bold text-indigo-400 ml-1">담당 부서</span>
+                <select id="inputDept">
+                    <option value="교무부">교무부</option><option value="연구부">연구부</option><option value="학생부">학생부</option>
+                    <option value="창의부">창의부</option><option value="학년부">학년부</option><option value="행정실">행정실</option>
+                    <option value="영양실">영양실</option>
+                </select>
+            </div>
+            <button onclick="handleAdd()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">저장</button>
+        </section>
+
+        <div class="flex justify-center items-center mb-6">
+            <div onclick="shiftTime(-1)" class="nav-arrow">❮</div>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[200px]">데이터 로딩 중...</h2>
+            <div onclick="shiftTime(1)" class="nav-arrow">❯</div>
+        </div>
+
+        <div id="viewPort"></div>
+    </main>
+
+    <footer class="mt-12 pb-10 text-center text-gray-400 text-[11px]">
+        Developed by <span class="font-bold text-indigo-900">Choi Gwang-cheul</span>, Gurye Middle School
+    </footer>
+
+    <script>
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
+        let events = [];
+        let curDate = new Date();
+        let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly'; // 모바일은 주간계획 기본
+
+        const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
+        const kHolidays = { '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-05-05': '어린이날', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-10-03': '개천절', '2026-10-09': '한글날', '2026-12-25': '성탄절' };
+
+        // 날짜 보정 함수
+        function toFixedDateStr(d) {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        }
+
+        async function fetchEvents() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                events = data.map(e => ({
+                    id: e.id,
+                    date: e.date.split('T')[0], // 시차 오류 방지 위해 T 이전 값만 사용
+                    title: e.title,
+                    dapt: e.dapt || '미지정'
+                }));
+                render();
+            } catch(e) { document.getElementById('mainTitle').innerText = "연결 오류"; }
+        }
+
+        function handleAdd() {
+            const date = document.getElementById('inputDate').value;
+            const title = document.getElementById('inputTitle').value;
+            const dapt = document.getElementById('inputDept').value;
+            if(!date || !title) return alert("입력 확인!");
+            const temp = { id: Date.now().toString(), date, title, dapt };
+            events.push(temp); render();
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...temp }) });
+        }
+
+        function deleteEvent(id) {
+            if(!confirm("삭제하시겠습니까?")) return;
+            events = events.filter(e => e.id.toString() !== id.toString());
+            render();
+            fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id.toString() }) });
+        }
+
+        function shiftTime(n) {
+            if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
+            else if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
+            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
+            render();
+        }
+
+        function changeView(v) { cur
