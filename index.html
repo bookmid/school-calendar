@@ -1,52 +1,241 @@
 
-# 더 이상 실수 없이! 초간단 버전!
-api = "https://script.google.com/macros/s/AKfycbzBzEu_8Xo_EOIcFX48-Lj6k5TehW6gF86fX7zkQszp1qzCX3RsXKfeVCUezVzfnaCx/exec"
-
-code = """<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>구례중 학사력</title>
 <script src="https://cdn.tailwindcss.com"></script>
+<style>
+.notice-green{background:#d1fae5;border-color:#10b981;font-weight:700;}
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;}
+.modal.show{display:flex;align-items:center;justify-content:center;}
+</style>
 </head>
-<body class="p-4">
-<div class="max-w-4xl mx-auto">
-<h1 class="text-2xl font-bold bg-indigo-900 text-white p-4 rounded">🏫 구례중 학사력</h1>
-<div id="content" class="mt-4 p-4 bg-white rounded">데이터 로드 중...</div>
+<body class="bg-gray-50 p-4">
+<div class="max-w-5xl mx-auto">
+<header class="bg-indigo-900 text-white p-4 rounded-xl mb-4 flex justify-between items-center">
+<h1 class="text-xl font-bold">🏫 구례중 학사력</h1>
+<div class="flex gap-2">
+<button id="btnAdmin" class="bg-indigo-700 px-3 py-1 rounded text-sm">🔐</button>
+<button id="btnWeek" class="bg-indigo-700 px-3 py-1 rounded text-sm">주간</button>
+<button id="btnMonth" class="bg-indigo-700 px-3 py-1 rounded text-sm">월간</button>
+</div>
+</div>
+</header>
+<div class="bg-white p-4 rounded-xl mb-4 grid grid-cols-1 md:grid-cols-4 gap-2">
+<input type="date" id="inDate" class="border p-2 rounded">
+<input type="text" id="inTitle" placeholder="행사내용" class="border p-2 rounded">
+<select id="inDept" class="border p-2 rounded">
+<option>교무</option><option>연구</option><option>학생</option><option>창의</option><option>행정</option>
+</select>
+<button id="btnSave" class="bg-indigo-600 text-white rounded font-bold">저장</button>
+</div>
+<div class="bg-white p-3 rounded-xl mb-4 flex justify-between items-center">
+<button id="btnPrev" class="text-indigo-600 font-bold px-4">❮</button>
+<h2 id="titleText" class="font-bold">2026년 2월 주간</h2>
+<button id="btnNext" class="text-indigo-600 font-bold px-4">❯</button>
+</div>
+<div id="viewport" class="bg-white p-4 rounded-xl mb-4">로딩 중...</div>
+<div id="notices" class="bg-white p-4 rounded-xl mb-4" style="display:none;">
+<h3 class="font-bold mb-4">📢 주간 안내사항</h3>
+<div id="noticeList"></div>
+</div>
+<div id="adminBadge" style="display:none;position:fixed;top:20px;right:20px;background:#ef4444;color:white;padding:8px;border-radius:8px;">🔐 관리자</div>
+<div id="sync" style="position:fixed;bottom:20px;right:20px;background:#4f46e5;color:white;padding:8px 16px;border-radius:20px;">● 로딩</div>
+</div>
+
+<div id="loginModal" class="modal">
+<div style="background:white;padding:24px;border-radius:16px;max-width:400px;width:90%;">
+<h3 class="font-bold text-lg mb-4">🔐 관리자 로그인</h3>
+<input type="text" id="adminId" value="admin" class="w-full border p-2 rounded mb-2">
+<input type="password" id="adminPw" class="w-full border p-2 rounded mb-2">
+<button id="btnLogin" class="w-full bg-indigo-600 text-white p-2 rounded font-bold">로그인</button>
+</div>
+</div>
+
+<div id="detailModal" class="modal">
+<div style="background:white;padding:24px;border-radius:16px;max-width:600px;width:90%;position:relative;">
+<button id="closeDetail" style="position:absolute;top:12px;right:12px;font-size:24px;background:none;border:none;cursor:pointer;">&times;</button>
+<div id="detailContent"></div>
+</div>
 </div>
 
 <script>
-var apiUrl = """" + api + """";
+var API="https://script.google.com/macros/s/AKfycbzBzEu_8Xo_EOIcFX48-Lj6k5TehW6gF86fX7zkQszp1qzCX3RsXKfeVCUezVzfnaCx/exec";
+var events=[],notices={},currentDate=new Date(),viewMode="week",isAdmin=false;
+var dayNames=["일","월","화","수","목","금","토"];
 
-fetch(apiUrl + "?action=load")
-  .then(r => r.json())
-  .then(data => {
-    console.log(data);
-    document.getElementById("content").innerHTML = 
-      "<p>✅ 연결 성공!</p>" +
-      "<p>이벤트 수: " + (data.events ? data.events.length : 0) + "</p>";
-  })
-  .catch(e => {
-    console.error(e);
-    document.getElementById("content").innerHTML = 
-      "<p class='text-red-500'>❌ 오류: " + e.message + "</p>";
-  });
+function load(){
+fetch(API+"?action=load&t="+Date.now())
+.then(r=>r.json())
+.then(d=>{
+console.log("✅",d);
+events=d.events||[];
+notices=d.notices||{};
+document.getElementById("sync").textContent="● 완료";
+render();
+}).catch(e=>{
+console.error("❌",e);
+document.getElementById("sync").textContent="● 오류";
+});
+}
+
+function save(action,data){
+fetch(API,{method:"POST",body:JSON.stringify(Object.assign({action:action},data))})
+.then(r=>r.json())
+.then(d=>{console.log("💾",d);setTimeout(load,1000);});
+}
+
+function render(){
+var y=currentDate.getFullYear(),m=currentDate.getMonth()+1;
+document.getElementById("titleText").textContent=y+"년 "+m+"월 "+(viewMode=="week"?"주간":"월간");
+if(viewMode=="week")renderWeek();else renderMonth();
+}
+
+function renderWeek(){
+var html="";
+var start=new Date(currentDate);
+start.setDate(start.getDate()-start.getDay());
+for(var i=0;i<7;i++){
+var d=new Date(start);
+d.setDate(start.getDate()+i);
+var ds=d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+var evs=events.filter(function(e){return e.date==ds;});
+var isWeekend=d.getDay()==0||d.getDay()==6;
+html+="<div class='p-3 rounded-lg border mb-2 "+(isWeekend?"bg-red-50":"")+"'>";
+html+="<div class='font-bold'>"+d.getDate()+"일 ("+dayNames[d.getDay()]+")</div>";
+if(evs.length==0)html+="<div class='text-gray-400 text-sm'>일정 없음</div>";
+else{
+evs.forEach(function(e){
+html+="<div class='bg-indigo-50 p-2 rounded mt-1 text-sm'>"+e.title+" ("+e.dapt+")</div>";
+});
+}
+html+="</div>";
+}
+document.getElementById("viewport").innerHTML=html;
+document.getElementById("notices").style.display="block";
+renderNotices();
+}
+
+function renderMonth(){
+var y=currentDate.getFullYear(),m=currentDate.getMonth();
+var html="<div class='grid grid-cols-7 gap-1'>";
+dayNames.forEach(function(dn){html+="<div class='text-center font-bold text-sm p-2'>"+dn+"</div>";});
+var first=new Date(y,m,1).getDay();
+var last=new Date(y,m+1,0).getDate();
+for(var i=0;i<first;i++)html+="<div class='bg-gray-100 p-2 h-24'></div>";
+for(var d=1;d<=last;d++){
+var ds=y+"-"+pad(m+1)+"-"+pad(d);
+var evs=events.filter(function(e){return e.date==ds;});
+var dayIdx=new Date(y,m,d).getDay();
+var isWeekend=dayIdx==0||dayIdx==6;
+html+="<div class='border p-2 h-24 cursor-pointer "+(isWeekend?"bg-red-50":"")+"' onclick='showDetail(\""+ds+"\")'>";
+html+="<div class='text-sm font-bold'>"+d+"</div>";
+evs.forEach(function(e){html+="<div class='text-xs bg-indigo-100 p-1 mt-1 rounded'>"+e.title.substring(0,4)+"</div>";});
+html+="</div>";
+}
+html+="</div>";
+document.getElementById("viewport").innerHTML=html;
+document.getElementById("notices").style.display="none";
+}
+
+function renderNotices(){
+var roles=[
+{id:"principal",n:"🎓 교장"},
+{id:"vp",n:"👔 교감"},
+{id:"admin",n:"🏢 행정실장"},
+{id:"d1",n:"📘 교무부"},
+{id:"d2",n:"📕 연구부"},
+{id:"d3",n:"📗 학생부"},
+{id:"d4",n:"📙 창의인성부"},
+{id:"grade",n:"🎯 학년실"}
+];
+var wk=getWeekKey();
+var wn=notices[wk]||{};
+var html="";
+roles.forEach(function(r){
+var val=wn[r.id]||"";
+html+="<div class='mb-3'><div class='font-bold text-sm mb-1'>"+r.n+"</div>";
+html+="<div class='flex gap-2'>";
+html+="<input type='text' id='n_"+r.id+"' value='"+val+"' class='flex-1 border p-2 rounded text-sm "+(val?"notice-green":"")+"' oninput='noticeInput(\""+r.id+"\")'>";
+html+="<button onclick='saveNotice(\""+r.id+"\")' class='bg-indigo-600 text-white px-3 rounded text-sm'>저장</button>";
+html+="</div></div>";
+});
+document.getElementById("noticeList").innerHTML=html;
+}
+
+function showDetail(ds){
+var evs=events.filter(function(e){return e.date==ds;});
+var html="<h3 class='font-bold text-lg mb-4'>"+ds+"</h3>";
+if(evs.length==0)html+="<p class='text-gray-400'>일정 없음</p>";
+else evs.forEach(function(e){html+="<div class='bg-gray-50 p-3 rounded mb-2'><div class='font-bold'>"+e.title+"</div><div class='text-sm'>"+e.dapt+"</div></div>";});
+document.getElementById("detailContent").innerHTML=html;
+document.getElementById("detailModal").classList.add("show");
+}
+
+function getWeekKey(){
+var d=new Date(currentDate);
+var day=d.getDay();
+d.setDate(d.getDate()-(day==0?6:day-1));
+return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());
+}
+
+function pad(n){return String(n).padStart(2,"0");}
+
+function noticeInput(r){
+var el=document.getElementById("n_"+r);
+if(el.value)el.classList.add("notice-green");
+else el.classList.remove("notice-green");
+}
+
+function saveNotice(r){
+var wk=getWeekKey();
+var val=document.getElementById("n_"+r).value;
+if(!notices[wk])notices[wk]={};
+notices[wk][r]=val;
+save("saveNotice",{weekKey:wk,role:r,content:val});
+alert("저장 완료!");
+}
+
+document.getElementById("btnAdmin").onclick=function(){document.getElementById("loginModal").classList.add("show");};
+document.getElementById("btnLogin").onclick=function(){
+if(document.getElementById("adminId").value=="admin"&&document.getElementById("adminPw").value=="1234"){
+isAdmin=true;
+document.getElementById("adminBadge").style.display="block";
+document.getElementById("loginModal").classList.remove("show");
+alert("로그인 성공!");
+}else alert("비밀번호 오류");
+};
+document.getElementById("btnWeek").onclick=function(){viewMode="week";render();};
+document.getElementById("btnMonth").onclick=function(){viewMode="month";render();};
+document.getElementById("btnPrev").onclick=function(){
+if(viewMode=="month")currentDate.setMonth(currentDate.getMonth()-1);
+else currentDate.setDate(currentDate.getDate()-7);
+render();
+};
+document.getElementById("btnNext").onclick=function(){
+if(viewMode=="month")currentDate.setMonth(currentDate.getMonth()+1);
+else currentDate.setDate(currentDate.getDate()+7);
+render();
+};
+document.getElementById("btnSave").onclick=function(){
+var d=document.getElementById("inDate").value;
+var t=document.getElementById("inTitle").value;
+var dept=document.getElementById("inDept").value;
+if(!d||!t){alert("입력 필요");return;}
+var e={id:Date.now().toString(),date:d,title:t,dapt:dept};
+events.push(e);
+render();
+save("addEvent",e);
+document.getElementById("inDate").value="";
+document.getElementById("inTitle").value="";
+};
+document.getElementById("closeDetail").onclick=function(){document.getElementById("detailModal").classList.remove("show");};
+
+console.log("🚀 시작");
+load();
+setInterval(load,15000);
 </script>
 </body>
-</html>"""
-
-with open('/tmp/index_초간단.html', 'w', encoding='utf-8') as f:
-    f.write(code)
-
-print("✅ 초간단 버전 완성!")
-print("\n이 파일은:")
-print("  - 문법 오류 절대 없음")
-print("  - API 연결만 테스트")
-print("  - 20줄 코드")
-print("\n이것부터 테스트하고,")
-print("작동하면 기능 추가하겠습니다!")
-print("\n📌 업로드:")
-print("  1. index_초간단.html 다운로드")
-print("  2. index.html로 변경")
-print("  3. 업로드")
-print("  4. 새로고침")
+</html>
