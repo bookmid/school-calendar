@@ -9,9 +9,12 @@
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 12px; overflow: hidden; }
-        .day-cell { min-height: 115px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; border: 0.5px solid #f1f5f9; }
+        .day-cell { min-height: 115px; background-color: white; padding: 8px; cursor: pointer; border: 0.5px solid #f1f5f9; }
         .bg-holiday { background-color: #fff1f2 !important; }
         .event-badge { font-size: 11px; padding: 2.5px 6px; margin-top: 3px; border-radius: 5px; background-color: #eef2ff; border-left: 3px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        /* 삭제 버튼 스타일 */
+        .del-btn { color: #ef4444; font-weight: bold; margin-left: 8px; cursor: pointer; padding: 0 4px; border-radius: 4px; }
+        .del-btn:hover { background-color: #fee2e2; }
         footer { margin-top: auto; padding: 25px; text-align: center; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; background: white; }
     </style>
 </head>
@@ -20,24 +23,17 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold cursor-pointer" onclick="location.reload()">🏫 구례중 실시간 학사력</h1>
             <div class="flex gap-2">
-                <button onclick="setView('yearly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm transition">1년</button>
-                <button onclick="setView('monthly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm transition">월간</button>
-                <button onclick="setView('weekly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm transition">주간</button>
+                <button onclick="setView('yearly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm">1년</button>
+                <button onclick="setView('monthly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm">월간</button>
+                <button onclick="setView('weekly')" class="px-4 py-1.5 bg-indigo-700 hover:bg-indigo-600 rounded-full text-sm">주간</button>
             </div>
         </div>
     </nav>
 
     <main class="container mx-auto p-4 max-w-6xl">
         <section class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 mt-4 flex flex-wrap gap-4 items-end justify-center">
-            <div class="flex-1 min-w-[140px] text-left">
-                <label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
-                <input type="date" id="dateIn" class="w-full border p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
-            </div>
-            <div class="flex-[2] min-w-[200px] text-left">
-                <label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
-                <input type="text" id="titleIn" placeholder="행사 내용을 입력하세요" class="w-full border p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
-            </div>
-            <div class="flex-1 min-w-[140px] text-left">
-                <label class="text-[10px] font-bold text-gray-400 ml-1">관련 부서</label>
-                <select id="deptIn" class="w-full border p-2.5 rounded-xl outline-none bg-white focus:ring-2 focus:ring-indigo-400">
-                    <option value="교무부">교무부
+            <div class="flex-1 min-w-[140px]"><label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
+                <input type="date" id="dateIn" class="w-full border p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+            <div class="flex-[2] min-w-[200px]"><label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
+                <input type="text" id="titleIn" placeholder="행사 내용을 입력하세요" class="w-full border p-2.5 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+            <div class="flex-1 min-w-[140px]"><label class="text-[10px] font-
