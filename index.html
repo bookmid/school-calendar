@@ -7,144 +7,145 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f1f5f9; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden; }
-        .day-cell { min-height: 100px; background-color: white; padding: 4px; display: flex; flex-direction: column; }
-        .event-badge { font-size: 11px; padding: 2px 6px; margin-top: 2px; border-radius: 4px; background-color: #eff6ff; border-left: 3px solid #3b82f6; color: #1e3a8a; display: flex; justify-content: space-between; align-items: center; font-weight: 700; }
-        .del-btn { color: #ef4444; margin-left: 5px; cursor: pointer; font-size: 14px; }
-        .bg-sun { background-color: #fff1f2; } .bg-sat { background-color: #f0f9ff; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .day-cell { min-height: 110px; background-color: white; padding: 6px; }
+        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #6366f1; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; }
+        .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
+        .del-x { color: #ef4444; cursor: pointer; margin-left: 4px; }
     </style>
     <script>
-        // 1. 전역 변수 및 설정
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
+        // [설정]
+        const API = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
         let events = [];
-        let viewDate = new Date();
-        let currentView = 'monthly';
+        let now = new Date();
+        let viewMode = 'monthly';
 
-        // 2. 핵심 함수 정의 (브라우저가 즉시 인식하도록 최상단 배치)
-        window.toKey = (date) => {
-            const y = date.getFullYear();
-            const m = String(date.getMonth() + 1).padStart(2, '0');
-            const d = String(date.getDate()).padStart(2, '0');
-            return `${y}-${m}-${d}`;
+        // [함수: 날짜를 "YYYY-MM-DD" 글자로 변환]
+        window.getStrDate = (d) => {
+            return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         };
 
+        // [함수: 화면 그리기]
         window.render = function() {
             const port = document.getElementById('viewPort');
-            const title = document.getElementById('displayTitle');
-            if(!port || !title) return;
+            const title = document.getElementById('titleText');
+            if(!port) return;
 
-            const y = viewDate.getFullYear(), m = viewDate.getMonth();
-            
-            if (currentView === 'monthly') {
-                title.innerText = `${y}년 ${m + 1}월`;
+            const y = now.getFullYear(), m = now.getMonth();
+            title.innerText = `${y}년 ${m + 1}월 ${viewMode === 'weekly' ? '주간' : ''}`;
+            port.innerHTML = '';
+
+            if (viewMode === 'monthly') {
                 let html = '<div class="calendar-grid">';
-                ['일','월','화','수','목','금','토'].forEach(d => html += `<div class="bg-slate-50 p-2 text-center text-xs font-bold">${d}</div>`);
+                ['일','월','화','수','목','금','토'].forEach(w => html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-bold text-slate-400">${w}</div>`);
                 
-                const firstDay = new Date(y, m, 1).getDay();
-                const lastDate = new Date(y, m + 1, 0).getDate();
+                const first = new Date(y, m, 1).getDay();
+                const last = new Date(y, m + 1, 0).getDate();
 
-                for (let i = 0; i < firstDay; i++) html += '<div class="day-cell bg-slate-50/50"></div>';
-                for (let d = 1; d <= lastDate; d++) {
-                    const dateObj = new Date(y, m, d);
-                    const key = window.toKey(dateObj);
-                    const isSun = dateObj.getDay() === 0;
-                    html += `<div class="day-cell ${isSun ? 'bg-sun' : ''}">
-                        <div class="text-[10px] font-bold ${isSun ? 'text-red-500' : 'text-slate-400'}">${d}</div>
-                        <div class="flex-1 overflow-y-auto">
-                            ${events.filter(e => e.date === key).map(e => `
-                                <div class="event-badge">
+                for (let i = 0; i < first; i++) html += '<div class="day-cell bg-slate-50/30"></div>';
+                for (let d = 1; d <= last; d++) {
+                    const dateStr = `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    const dayIdx = new Date(y, m, d).getDay();
+                    const colorClass = dayIdx === 0 ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
+
+                    html += `<div class="day-cell">
+                        <div class="text-[11px] font-black ${colorClass}">${d}</div>
+                        <div class="mt-1">
+                            ${events.filter(e => e.date === dateStr).map(e => `
+                                <div class="event-item">
                                     <span>${e.title} (${e.dapt})</span>
-                                    <span class="del-btn" onclick="window.handleDelete('${e.id}')">×</span>
+                                    <span class="del-x" onclick="window.handleDelete('${e.id}')">✕</span>
                                 </div>`).join('')}
-                        </div></div>`;
+                        </div>
+                    </div>`;
                 }
                 port.innerHTML = html + '</div>';
             } else {
-                // 주간 보기 로직
-                const start = new Date(viewDate);
-                start.setDate(viewDate.getDate() - viewDate.getDay());
-                title.innerText = `${y}년 ${m + 1}월 주간`;
+                // 주간 모드
+                const start = new Date(now);
+                start.setDate(now.getDate() - now.getDay());
                 let html = '<div class="flex flex-col gap-2">';
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(start); d.setDate(start.getDate() + i);
-                    const key = window.toKey(d);
-                    html += `<div class="p-4 bg-white rounded-lg shadow-sm border flex items-center">
-                        <div class="w-12 font-black text-indigo-600">${d.getDate()}일</div>
-                        <div class="flex-1">${events.filter(e => e.date === key).map(e => `<div class="event-badge py-1 mb-1"><span>${e.title} (${e.dapt})</span><span class="del-btn" onclick="window.handleDelete('${e.id}')">×</span></div>`).join('')}</div>
+                    const dateStr = window.getStrDate(d);
+                    html += `<div class="p-4 bg-white rounded-xl border flex items-center shadow-sm">
+                        <div class="w-16 font-black text-indigo-900 border-r mr-4">${d.getDate()}일</div>
+                        <div class="flex-1">${events.filter(e => e.date === dateStr).map(e => `<div class="event-item mb-1 p-2"><span>${e.title} (${e.dapt})</span><span class="del-x" onclick="window.handleDelete('${e.id}')">✕</span></div>`).join('')}</div>
                     </div>`;
                 }
                 port.innerHTML = html + '</div>';
             }
         };
 
-        window.shiftTime = (n) => {
-            if (currentView === 'monthly') viewDate.setMonth(viewDate.getMonth() + n);
-            else viewDate.setDate(viewDate.getDate() + (n * 7));
+        window.move = (n) => {
+            if (viewMode === 'monthly') now.setMonth(now.getMonth() + n);
+            else now.setDate(now.getDate() + (n * 7));
             window.render();
         };
 
-        window.changeView = (v) => { currentView = v; window.render(); };
+        window.toggleView = (v) => { viewMode = v; window.render(); };
 
         window.handleSave = async () => {
             const date = document.getElementById('inDate').value;
             const title = document.getElementById('inTitle').value;
             const dapt = document.getElementById('inDept').value;
-            if (!date || !title) return alert("내용을 입력하세요.");
+            if (!date || !title) return alert("날짜와 내용을 확인하세요.");
             
             const newItem = { id: String(Date.now()), date, title, dapt };
             events.push(newItem); window.render();
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...newItem }) });
+            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'add', ...newItem }) });
         };
 
         window.handleDelete = async (id) => {
             if (!confirm("삭제하시겠습니까?")) return;
             events = events.filter(e => e.id !== id); window.render();
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) });
+            await fetch(API, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) });
         };
 
         async function sync() {
             try {
-                const res = await fetch(API_URL);
+                const res = await fetch(API);
                 const data = await res.json();
+                // 서버 날짜 데이터에서 시차 무시하고 글자만 추출
                 events = data.map(e => ({ ...e, date: String(e.date).substring(0, 10) }));
                 window.render();
-            } catch (e) { console.error("Sync Error", e); }
+            } catch (e) { console.error("Sync Fail", e); }
         }
 
         window.onload = () => { sync(); setInterval(sync, 15000); };
     </script>
 </head>
-<body class="p-2 md:p-4">
-    <header class="max-w-4xl mx-auto bg-indigo-900 text-white p-4 rounded-t-2xl flex justify-between items-center shadow-lg">
-        <h1 class="font-black text-lg">🏫 구례중 실시간 학사력</h1>
-        <div class="flex gap-2">
-            <button onclick="window.changeView('monthly')" class="text-xs bg-indigo-700 px-3 py-1 rounded font-bold">월간</button>
-            <button onclick="window.changeView('weekly')" class="text-xs bg-indigo-700 px-3 py-1 rounded font-bold">주간</button>
-        </div>
-    </header>
+<body class="p-3">
+    <div class="max-w-4xl mx-auto">
+        <header class="flex justify-between items-center mb-6 bg-indigo-900 p-4 rounded-2xl text-white shadow-lg">
+            <h1 class="font-black">🏫 구례중 학사력</h1>
+            <div class="flex gap-2">
+                <button onclick="window.toggleView('monthly')" class="text-xs bg-indigo-700 px-3 py-1.5 rounded-lg font-bold">월간</button>
+                <button onclick="window.toggleView('weekly')" class="text-xs bg-indigo-700 px-3 py-1.5 rounded-lg font-bold">주간</button>
+            </div>
+        </header>
 
-    <main class="max-w-4xl mx-auto bg-white p-4 shadow-md">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-6 bg-slate-50 p-3 rounded-xl border border-slate-200">
-            <input type="date" id="inDate" class="border p-2 rounded-lg text-sm">
-            <input type="text" id="inTitle" placeholder="행사명" class="border p-2 rounded-lg text-sm">
-            <select id="inDept" class="border p-2 rounded-lg text-sm">
-                <option>교무</option><option>연구</option><option>학생</option><option>학년</option><option>행정</option>
+        <section class="bg-white p-4 rounded-2xl shadow-sm border mb-4 grid grid-cols-2 md:grid-cols-4 gap-2">
+            <input type="date" id="inDate" class="border p-2 rounded-xl text-sm outline-none">
+            <input type="text" id="inTitle" placeholder="행사내용" class="border p-2 rounded-xl text-sm outline-none">
+            <select id="inDept" class="border p-2 rounded-xl text-sm outline-none">
+                <option>교무</option><option>연구</option><option>학생</option><option>창의</option><option>행정</option>
             </select>
-            <button onclick="window.handleSave()" class="bg-indigo-600 text-white rounded-lg font-bold hover:bg-indigo-700 transition-colors">저장하기</button>
-        </div>
+            <button onclick="window.handleSave()" class="bg-indigo-600 text-white rounded-xl font-bold py-2">저장하기</button>
+        </section>
 
-        <div class="flex justify-between items-center mb-4">
-            <button onclick="window.shiftTime(-1)" class="text-2xl font-bold text-indigo-600 px-4">❮</button>
-            <h2 id="displayTitle" class="text-xl font-black text-slate-700">로딩 중...</h2>
-            <button onclick="window.shiftTime(1)" class="text-2xl font-bold text-indigo-600 px-4">❯</button>
+        <div class="flex justify-between items-center bg-white p-3 rounded-2xl border mb-4">
+            <button onclick="window.move(-1)" class="text-indigo-600 font-bold px-4">❮</button>
+            <h2 id="titleText" class="text-lg font-black text-slate-700">로딩 중...</h2>
+            <button onclick="window.move(1)" class="text-indigo-600 font-bold px-4">❯</button>
         </div>
 
         <div id="viewPort"></div>
-    </main>
 
-    <footer class="max-w-4xl mx-auto text-center py-6 text-slate-400 text-[10px]">
-        Developed by <span class="font-bold text-slate-600">Choi Gwang-cheul</span>, Gurye Middle School
-    </footer>
+        <footer class="text-center py-8 text-slate-400 text-[10px]">
+            © Choi Gwang-cheul, Gurye Middle School
+        </footer>
+    </div>
 </body>
 </html>
