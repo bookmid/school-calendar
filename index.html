@@ -14,7 +14,7 @@
         .bg-sat { background-color: #f0f7ff !important; }
         .event-badge { font-size: 11px; padding: 3px 6px; margin-top: 2px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #6366f1; color: #1e293b; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
         .holiday-badge { background-color: #ffe4e6; border-left: 3px solid #f43f5e; color: #9f1239; }
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 6px; font-size: 16px; padding: 0 4px; }
+        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 6px; font-size: 16px; padding: 0 4px; line-height: 1; }
         #syncIcon { position: fixed; bottom: 15px; right: 15px; font-size: 10px; background: white; padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1000; }
         @media (max-width: 640px) { .pc-only { display: none !important; } .day-cell { min-height: 95px; } .event-badge { font-size: 10px; } }
     </style>
@@ -34,7 +34,7 @@
     <main class="container mx-auto p-3 max-w-5xl">
         <section class="bg-white p-5 rounded-2xl shadow-sm mb-4 border border-slate-200 grid grid-cols-2 md:grid-cols-4 gap-3 items-end">
             <div><label class="text-[10px] font-bold text-indigo-500 ml-1">날짜</label><input type="date" id="inputDate" class="w-full border border-slate-300 rounded-xl p-2 text-sm outline-none"></div>
-            <div class="col-span-1"><label class="text-[10px] font-bold text-indigo-500 ml-1">행사 내용</label><input type="text" id="inputTitle" placeholder="일정 입력" class="w-full border border-slate-300 rounded-xl p-2 text-sm outline-none"></div>
+            <div><label class="text-[10px] font-bold text-indigo-500 ml-1">행사 내용</label><input type="text" id="inputTitle" placeholder="일정 입력" class="w-full border border-slate-300 rounded-xl p-2 text-sm outline-none"></div>
             <div><label class="text-[10px] font-bold text-indigo-500 ml-1">담당 부서</label>
                 <select id="inputDept" class="w-full border border-slate-300 rounded-xl p-2 text-sm outline-none">
                     <option value="교무">교무부</option><option value="연구">연구부</option><option value="학생">학생부</option>
@@ -46,19 +46,23 @@
 
         <div class="flex justify-between items-center mb-4 bg-white rounded-xl py-2 shadow-sm border border-slate-100">
             <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl">❮</button>
-            <h2 id="mainTitle" class="text-xl font-black text-slate-800">로딩 중...</h2>
+            <h2 id="mainTitle" class="text-xl font-black text-slate-800">2026년 2월</h2>
             <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl">❯</button>
         </div>
 
         <div id="viewPort" class="min-h-[400px]"></div>
+
+        <footer class="mt-8 pb-10 text-center text-slate-400 text-[11px]">
+            Developed by <span class="font-bold text-indigo-900">Choi Gwang-cheul</span>, Gurye Middle School
+        </footer>
     </main>
 
-    <div id="syncIcon">📡 동기화 준비 중</div>
+    <div id="syncIcon">📡 실시간 동기화 중</div>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
         let events = [];
-        let curDate = new Date(); // 화면 표시용
+        let curDate = new Date();
         let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
         const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
 
@@ -70,8 +74,8 @@
             '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '성탄절'
         };
 
-        // 헬퍼: 날짜 문자열 생성 (시차 무관하게 YYYY-MM-DD 생성)
-        window.makeDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        // 핵심: 자바스크립트 Date 객체를 거치지 않고 순수 문자열만 생성하는 함수
+        window.getStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
         window.render = function() {
             const port = document.getElementById('viewPort');
@@ -83,11 +87,13 @@
                 head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid">';
                 dayLabels.forEach((d, i) => html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-black ${i===0?'text-red-500':i===6?'text-blue-500':'text-slate-400'}">${d}</div>`);
+                
                 const firstDay = new Date(y, m, 1).getDay();
                 const lastDate = new Date(y, m + 1, 0).getDate();
                 for (let i = 0; i < firstDay; i++) html += '<div class="day-cell bg-slate-50/50"></div>';
+                
                 for (let d = 1; d <= lastDate; d++) {
-                    const ds = window.makeDateStr(y, m, d);
+                    const ds = window.getStr(y, m, d);
                     const dayIdx = new Date(y, m, d).getDay();
                     const hName = kHolidays[ds];
                     html += `<div class="day-cell ${dayIdx === 0 || hName ? 'bg-holiday' : dayIdx === 6 ? 'bg-sat' : ''}">
@@ -106,7 +112,7 @@
                 let html = '<div class="flex flex-col gap-2">';
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(temp); d.setDate(temp.getDate() + i);
-                    const ds = window.makeDateStr(d.getFullYear(), d.getMonth(), d.getDate());
+                    const ds = window.getStr(d.getFullYear(), d.getMonth(), d.getDate());
                     const hName = kHolidays[ds];
                     const isHoliday = i === 0 || hName;
                     html += `<div class="p-4 rounded-xl border ${isHoliday ? 'bg-holiday border-red-100' : i === 6 ? 'bg-sat border-blue-100' : 'bg-white'} flex items-center shadow-sm">
@@ -124,7 +130,7 @@
                     html += `<div class="bg-white p-2 rounded-lg border text-[10px]"><div class="font-bold text-indigo-600 border-b mb-1">${i+1}월</div>`;
                     for (let d = 1; d <= 31; d++) {
                         const check = new Date(y, i, d); if (check.getMonth() !== i) continue;
-                        const ds = window.makeDateStr(y, i, d);
+                        const ds = window.getStr(y, i, d);
                         const hName = kHolidays[ds]; const dayEvents = events.filter(e => e.date === ds);
                         if (hName || dayEvents.length > 0) html += `<div class="mb-0.5 ${hName?'text-red-500':''}"><b>${d}</b> ${hName || ''} ${dayEvents.map(e=>e.title + '('+e.dapt+')').join(', ')}</div>`;
                     }
@@ -144,10 +150,10 @@
         window.setView = (v) => { curView = v; window.render(); };
 
         window.handleAdd = async () => {
-            const date = document.getElementById('inputDate').value; // 'YYYY-MM-DD' 문자열 그대로 가져옴
+            const date = document.getElementById('inputDate').value;
             const title = document.getElementById('inputTitle').value;
             const dapt = document.getElementById('inputDept').value;
-            if (!date || !title) return alert("입력 오류!");
+            if (!date || !title) return alert("날짜와 내용을 입력해주세요!");
             const newItem = { id: String(Date.now()), date: date, title: title, dapt: dapt };
             events.push(newItem); window.render();
             document.getElementById('inputTitle').value = '';
@@ -155,7 +161,7 @@
         };
 
         window.deleteEvent = async (id) => {
-            if (!confirm("삭제할까요?")) return;
+            if (!confirm("삭제하시겠습니까?")) return;
             events = events.filter(e => e.id !== id); window.render();
             await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) });
         };
@@ -164,8 +170,8 @@
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
-                // 서버 날짜 데이터(T... 자르기)를 시차 변환 없이 순수 문자열로만 저장
-                events = data.map(e => ({ id: String(e.id), date: e.date.split('T')[0], title: e.title, dapt: e.dapt }));
+                // 서버 날짜의 T... 이후를 확실히 잘라내어 문자열로만 보관
+                events = data.map(e => ({ id: String(e.id), date: e.date.substring(0, 10), title: e.title, dapt: e.dapt }));
                 window.render();
                 document.getElementById('syncIcon').innerText = '🟢 실시간 연결됨';
             } catch (e) { document.getElementById('syncIcon').innerText = '🔴 연결 지연'; }
@@ -176,4 +182,3 @@
         setInterval(sync, 5000);
     </script>
 </body>
-</html>
