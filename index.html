@@ -149,6 +149,11 @@
                 const found = this.holidays.find(h => h.startsWith(dateStr + ':'));
                 return found ? found.split(':')[1] : null;
             },
+
+            // ⭐ '재량휴업일' 여부 확인
+            isDiscretionaryHoliday(dateStr) {
+                return this.events.some(e => e.date === dateStr && e.title.includes('재량휴업일'));
+            },
             
             setSyncStatus(status) {
                 const indicator = document.getElementById('syncIndicator');
@@ -340,9 +345,10 @@
                         const dayIdx = new Date(year, m, d).getDay();
                         const hasEvent = this.events.some(e => e.date === dateStr && !e.id.startsWith('notice_'));
                         const holiday = this.getHoliday(dateStr);
+                        const isDiscretionary = this.isDiscretionaryHoliday(dateStr); // ⭐ 재량휴업일 확인
                         const isWeekend = dayIdx === 0 || dayIdx === 6;
                         const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-600');
-                        const holidayClass = holiday ? 'holiday-bg' : '';
+                        const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
                         const cellClass = holiday || isWeekend ? 'weekend' : (hasEvent ? 'has-event' : '');
                         html += `<div class="mini-day ${cellClass} ${colorClass} ${holidayClass}" onclick="app.showDetail('${dateStr}')">${d}</div>`;
                     }
@@ -363,9 +369,10 @@
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dayIdx = new Date(year, month, d).getDay();
                     const holiday = this.getHoliday(dateStr);
+                    const isDiscretionary = this.isDiscretionaryHoliday(dateStr); // ⭐ 재량휴업일 확인
                     const isWeekend = dayIdx === 0 || dayIdx === 6;
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
-                    const holidayClass = holiday ? 'holiday-bg' : '';
+                    const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
                     const weekendClass = (isWeekend || holiday) ? 'weekend-cell' : '';
                     html += `<div class="day-cell ${weekendClass} ${holidayClass}" onclick="app.showDetail('${dateStr}')">
                         <div class="text-[10px] md:text-[11px] font-black ${colorClass}">${d}</div>`;
@@ -398,8 +405,9 @@
                     d.setDate(monday.getDate() + i);
                     const dStr = this.formatDate(d);
                     const holiday = this.getHoliday(dStr);
+                    const isDiscretionary = this.isDiscretionaryHoliday(dStr); // ⭐ 재량휴업일 확인
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    const holidayClass = holiday ? 'holiday-bg' : '';
+                    const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
                     const weekendClass = (isWeekend || holiday) ? 'weekend-bg' : '';
                     html += `<div class="week-item ${weekendClass} ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm" onclick="app.showDetail('${dStr}')">
                         <div class="w-16 md:w-24 font-black text-indigo-900 border-r mr-4">${d.getDate()}일`;
