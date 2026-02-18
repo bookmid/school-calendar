@@ -88,12 +88,13 @@
             API_URL: 'https://script.google.com/macros/s/AKfycbxJWIOqWzlIBIBQskT-zo7nb7vlw241VSnFZRTW3f-9LvEcozJ5lSYosGs4c6qAcoD9/exec',
             
             events: [],
-            notices: {},  // ⭐ 모든 주의 안내사항을 저장
+            notices: {},
             currentDate: new Date(),
-            viewMode: 'weekly',  // ⭐ 첫 화면을 주간으로
+            viewMode: 'weekly',
             isEditing: false,
             editingTimeout: null,
             lastSyncTime: 0,
+            localNotices: {},  // ⭐ 로컬 임시 저장용
             
             holidays: [
                 '2026-01-01:신정',
@@ -168,9 +169,34 @@
                 return d;
             },
             
+            // ⭐ 로컬과 서버 데이터 병합
+            mergeNotices(serverNotices) {
+                console.log('🔄 데이터 병합 시작');
+                console.log('📥 서버 데이터:', serverNotices);
+                console.log('💾 로컬 데이터:', this.localNotices);
+                
+                // 서버 데이터를 기본으로
+                const merged = { ...serverNotices };
+                
+                // 로컬 데이터로 덮어쓰기 (로컬이 최신)
+                for (const weekKey in this.localNotices) {
+                    if (!merged[weekKey]) {
+                        merged[weekKey] = {};
+                    }
+                    merged[weekKey] = {
+                        ...merged[weekKey],
+                        ...this.localNotices[weekKey]
+                    };
+                }
+                
+                console.log('✅ 병합 결과:', merged);
+                return merged;
+            },
+            
             async loadFromServer() {
                 const now = Date.now();
                 if (this.isEditing || (now - this.lastSyncTime < 1000)) {
+                    console.log('⏸️ 동기화 건너뜀');
                     return;
                 }
                 
@@ -183,7 +209,7 @@
                     }
                     
                     const data = await response.json();
-                    console.log('📥 서버에서 받은 데이터:', data);
+                    console.log('📥 서버 데이터:', data);
                     
                     // 이벤트 처리
                     this.events = (data.events || []).map(item => {
@@ -201,12 +227,9 @@
                         };
                     });
                     
-                    // ⭐ 안내사항 처리 - 기존 데이터와 병합
+                    // ⭐ 안내사항 병합
                     if (data.notices && typeof data.notices === 'object') {
-                        // 서버 데이터로 완전히 덮어쓰기 (누적된 모든 주의 데이터)
-                        this.notices = data.notices;
-                        console.log('✅ 안내사항 로드:', Object.keys(this.notices).length, '개 주');
-                        console.log('📋 전체 안내사항:', this.notices);
+                        this.notices = this.mergeNotices(data.notices);
                     }
                     
                     this.lastSyncTime = now;
@@ -221,7 +244,7 @@
             async saveToServer(action, data) {
                 try {
                     this.setSyncStatus('syncing');
-                    console.log('💾 서버에 저장:', action, data);
+                    console.log('💾 서버 저장:', action, data);
                     
                     const response = await fetch(this.API_URL, {
                         method: 'POST',
@@ -233,6 +256,16 @@
                     
                     setTimeout(() => {
                         this.isEditing = false;
+                        // ⭐ 저장 성공 시 로컬 데이터 초기화
+                        if (action === 'saveNotice') {
+                            const weekKey = data.weekKey;
+                            if (this.localNotices[weekKey]) {
+                                delete this.localNotices[weekKey][data.role];
+                                if (Object.keys(this.localNotices[weekKey]).length === 0) {
+                                    delete this.localNotices[weekKey];
+                                }
+                            }
+                        }
                         this.loadFromServer();
                     }, 2000);
                 } catch (error) {
@@ -301,26 +334,33 @@
                 if (this.editingTimeout) clearTimeout(this.editingTimeout);
             },
             
-            // ⭐ 안내사항 저장 개선
+            // ⭐ 안내사항 저장 완전 개선
             async saveNotice(role) {
                 const weekKey = this.getWeekKey();
                 const input = document.getElementById(`notice_${role}`);
                 if (!input) return;
                 
-                // 로컬에 즉시 저장
+                // ⭐ 1. notices에 즉시 저장
                 if (!this.notices[weekKey]) {
                     this.notices[weekKey] = {};
                 }
                 this.notices[weekKey][role] = input.value;
                 
-                console.log('💾 로컬 저장:', weekKey, role, input.value);
-                console.log('📊 현재 전체 안내사항:', this.notices);
+                // ⭐ 2. localNotices에도 저장 (뷰 전환 대비)
+                if (!this.localNotices[weekKey]) {
+                    this.localNotices[weekKey] = {};
+                }
+                this.localNotices[weekKey][role] = input.value;
+                
+                console.log('💾 즉시 저장:', weekKey, role, input.value);
+                console.log('📊 notices:', this.notices);
+                console.log('💿 localNotices:', this.localNotices);
                 
                 if (this.editingTimeout) clearTimeout(this.editingTimeout);
                 
-                // 3초 후 서버에 전체 안내사항 저장
+                // 3초 후 서버 저장
                 this.editingTimeout = setTimeout(async () => {
-                    console.log('☁️ 서버 저장 시도 - 전체 안내사항');
+                    console.log('☁️ 서버 저장 시작');
                     await this.saveToServer('saveNotice', {
                         weekKey,
                         role,
@@ -341,7 +381,9 @@
             },
             
             setView(mode) {
+                console.log('🔄 뷰 전환:', this.viewMode, '→', mode);
                 this.viewMode = mode;
+                // ⭐ 뷰 전환 시 로컬 데이터 유지하면서 렌더링
                 this.render();
             },
             
@@ -430,7 +472,6 @@
                     
                     html += '<div class="mt-1">';
                     
-                    // ⭐ 월간에서는 삭제 버튼 제거
                     this.events.filter(e => e.date === dateStr).forEach(e => {
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
                         const shortTitle = e.title.substring(0, 3);
@@ -494,10 +535,12 @@
                 
                 const weekKey = this.getWeekKey();
                 const monday = this.getMondayOfWeek();
+                
+                // ⭐ notices에서 데이터 가져오기 (로컬 데이터 포함)
                 const weekNotices = this.notices[weekKey] || {};
                 
-                console.log('🔍 렌더링 - 주간키:', weekKey);
-                console.log('📝 렌더링 - 안내사항:', weekNotices);
+                console.log('🔍 렌더링 - 주간:', weekKey);
+                console.log('📝 안내사항:', weekNotices);
                 
                 const noticeHtml = `
                     <div class="notice-section">
