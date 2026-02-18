@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례중학교 실시간 학사력</title>
+    <title>구례중학교 학사력</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; margin: 0; display: flex; flex-direction: column; min-height: 100vh; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 12px; overflow: hidden; }
         .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; }
         .bg-holiday { background-color: #fff1f2 !important; }
         .event-badge { font-size: 11px; padding: 3px 6px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 3px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .year-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .mini-month { background: white; padding: 15px; border-radius: 15px; shadow: 0 2px 4px rgba(0,0,0,0.05); }
-        .week-card { background: white; border-radius: 15px; margin-bottom: 10px; display: flex; border-left: 5px solid #4f46e5; }
+        .mini-month { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         footer { margin-top: auto; padding: 20px; text-align: center; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; }
     </style>
 </head>
@@ -32,20 +31,16 @@
 
     <main class="container mx-auto p-4 max-w-6xl">
         <section class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 mt-4 flex flex-wrap gap-3 items-end justify-center">
-            <div class="flex-1 min-w-[150px] text-left">
-                <label class="text-[10px] font-bold text-gray-400 ml-1">날짜 선택</label>
-                <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
-            </div>
-            <div class="flex-[2] min-w-[200px] text-left">
-                <label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
-                <input type="text" id="titleIn" placeholder="행사 내용을 입력하세요" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400">
-            </div>
-            <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 shadow-md transition active:scale-95">일정 저장</button>
+            <div class="flex-1 min-w-[150px]"><label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
+                <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+            <div class="flex-[2] min-w-[200px]"><label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
+                <input type="text" id="titleIn" placeholder="내용을 입력하세요" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+            <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md active:scale-95">일정 저장</button>
         </section>
 
         <div class="flex justify-center items-center gap-10 mb-6">
             <button onclick="shiftTime(-1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❮</button>
-            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px] text-center">데이터 로딩 중...</h2>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px] text-center text-center">불러오는 중...</h2>
             <button onclick="shiftTime(1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❯</button>
         </div>
 
@@ -58,6 +53,7 @@
     </footer>
 
     <script>
+        // 선생님의 API 주소 유지
         const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvklrg_REKRoR/exec';
         let events = [];
         let curDate = new Date();
@@ -70,27 +66,21 @@
                 const res = await fetch(API_URL);
                 events = await res.json();
                 render();
-            } catch(e) { document.getElementById('mainTitle').innerText = "연결 오류!"; }
+            } catch(e) { document.getElementById('mainTitle').innerText = "데이터 연결 실패!"; }
         }
 
         function setView(v) { curView = v; render(); }
-        
-        // 배경색 변경 시 팝업 알림 추가
-        function toggleColor(ds) { 
-            if(!manualReds.has(ds)) {
-                alert("휴업일로 지정합니다.");
-                manualReds.add(ds);
-            } else {
-                manualReds.delete(ds);
-            }
-            render(); 
-        }
-
         function shiftTime(n) {
             if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
             else if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
             else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
             render();
+        }
+
+        function toggleColor(ds) { 
+            if(!manualReds.has(ds)) { alert("휴업일로 지정합니다."); manualReds.add(ds); }
+            else { manualReds.delete(ds); }
+            render(); 
         }
 
         function render() {
@@ -108,9 +98,10 @@
                 for(let d=1; d<=last; d++) {
                     const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
                     const isHoliday = holidays.includes(ds) || new Date(y, m, d).getDay() === 0 || new Date(y, m, d).getDay() === 6 || manualReds.has(ds);
-                    html += `<div class="day-cell ${isHoliday ? 'bg-red-custom bg-holiday' : ''}" onclick="toggleColor('${ds}')">
+                    html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : ''}" onclick="toggleColor('${ds}')">
                         <div class="text-xs font-bold ${isHoliday ? 'text-red-500' : 'text-gray-400'}">${d}</div>`;
-                    events.filter(e => (e.date || e.data) === ds).forEach(e => html += `<div class="event-badge">${e.title}</div>`);
+                    // 시트의 'data' 헤더와 매칭
+                    events.filter(e => e.data === ds).forEach(e => html += `<div class="event-badge">${e.title}</div>`);
                     html += `</div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -119,9 +110,9 @@
                 head.innerText = `${y}년 전체 학사`;
                 let html = '<div class="year-wrapper">';
                 for(let i=0; i<12; i++) {
-                    html += `<div class="mini-month"><div class="font-bold text-indigo-600 border-b pb-1 mb-2 text-sm">${i+1}월 일정</div><div class="space-y-1">`;
-                    const mEvents = events.filter(e => new Date(e.date || e.data).getMonth() === i && new Date(e.date || e.data).getFullYear() === y);
-                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.date||a.data)-new Date(b.date||b.data)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${(e.date||e.data).split('-')[2]}일</strong> ${e.title}</div>`);
+                    html += `<div class="mini-month"><div class="font-bold text-indigo-600 border-b pb-1 mb-2 text-sm">${i+1}월</div><div class="space-y-1">`;
+                    const mEvents = events.filter(e => new Date(e.data).getMonth() === i && new Date(e.data).getFullYear() === y);
+                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${e.data.split('-')[2]}일</strong>: ${e.title}</div>`);
                     else html += `<div class="text-[10px] text-gray-300 italic">일정 없음</div>`;
                     html += '</div></div>';
                 }
@@ -134,11 +125,10 @@
                 for(let i=0; i<7; i++) {
                     const d = new Date(start); d.setDate(start.getDate() + i);
                     const ds = d.toISOString().split('T')[0];
-                    const dayName = ['일','월','화','수','목','금','토'][i];
-                    html += `<div class="week-card shadow-sm p-4 mb-3"><div class="w-16 text-center border-r pr-4 mr-4">
-                        <div class="text-xl font-bold ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d.getDate()}</div><div class="text-xs text-gray-400">${dayName}</div></div>
-                        <div class="flex-1 space-y-1">`;
-                    events.filter(e => (e.date || e.data) === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">${e.title}</div>`);
+                    html += `<div class="bg-white rounded-xl shadow-sm p-4 mb-3 flex border-l-4 border-indigo-500"><div class="w-16 text-center border-r pr-4 mr-4">
+                        <div class="text-xl font-bold ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d.getDate()}</div><div class="text-xs text-gray-400">${['일','월','화','수','목','금','토'][i]}</div></div>
+                        <div class="flex-1">`;
+                    events.filter(e => e.data === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">${e.title}</div>`);
                     html += `</div></div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -148,9 +138,10 @@
         async function handleAdd() {
             const date = document.getElementById('dateIn').value;
             const title = document.getElementById('titleIn').value;
-            if(!date || !title) return alert("입력 오류!");
+            if(!date || !title) return alert("날짜와 내용을 입력하세요!");
             document.getElementById('mainTitle').innerText = "저장 중...";
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', id: Date.now().toString(), date, title }) });
+            // 시트의 'data'와 'dapt' 열 이름에 맞춰 데이터 전송
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', id: Date.now().toString(), data: date, title: title, dapt: '교무부' }) });
             document.getElementById('titleIn').value = '';
             fetchEvents();
         }
