@@ -3,70 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>학교 실시간 학사력</title>
+    <title>실시간 학사력 시스템</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
         body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; color: #1e293b; margin: 0; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 15px; overflow: hidden; }
-        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; position: relative; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 15px; overflow: hidden; border: 1px solid #e2e8f0; }
+        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; position: relative; display: flex; flex-direction: column; }
         @media (max-width: 640px) { .day-cell { min-height: 85px; padding: 4px; } }
         .day-cell:hover { background-color: #f1f5f9; }
         .bg-holiday { background-color: #fff1f2 !important; } 
-        .event-badge { font-size: 10px; padding: 3px 6px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .event-badge { font-size: 10px; padding: 2px 5px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .holiday-badge { background-color: #ffe4e6; border-left: 2px solid #f43f5e; color: #9f1239; }
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 8px; font-size: 14px; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px; outline: none; width: 100%; }
-        
-        /* 제목 옆 버튼 스타일 */
-        .nav-arrow { font-size: 1.5rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; padding: 0 15px; user-select: none; }
-        .nav-arrow:hover { color: #4f46e5; transform: scale(1.2); }
-        .nav-arrow:active { transform: scale(0.9); }
+        .nav-arrow { font-size: 1.8rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; padding: 0 20px; user-select: none; }
+        .nav-arrow:hover { color: #4f46e5; }
     </style>
 </head>
 <body>
     <nav class="bg-indigo-900 text-white p-4 shadow-xl sticky top-0 z-50">
-        <div class="container mx-auto flex justify-between items-center">
-            <h1 class="text-xl font-black cursor-pointer" onclick="location.reload()">🏫 실시간 학사력</h1>
-            <div class="flex gap-2">
-                <button onclick="changeView('yearly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">1년</button>
-                <button onclick="changeView('monthly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">월간</button>
-                <button onclick="changeView('weekly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">주간</button>
-            </div>
-        </div>
-    </nav>
-
-    <main class="container mx-auto p-4 max-w-6xl">
-        <section class="bg-white p-6 rounded-[1.5rem] shadow-sm mb-6 border border-gray-100 flex flex-col md:flex-row gap-4 items-end">
-            <div class="w-full md:flex-1">
-                <span class="text-xs font-bold text-indigo-400">날짜</span>
-                <input type="date" id="inputDate">
-            </div>
-            <div class="w-full md:flex-[2]">
-                <span class="text-xs font-bold text-indigo-400">행사 내용</span>
-                <input type="text" id="inputTitle" placeholder="내용 입력">
-            </div>
-            <div class="w-full md:flex-1">
-                <span class="text-xs font-bold text-indigo-400">부서</span>
-                <select id="inputDept">
-                    <option value="교무부">교무부</option><option value="연구부">연구부</option>
-                    <option value="학생부">학생부</option><option value="창의인성부">창의인성부</option>
-                    <option value="학년부">학년부</option><option value="행정실">행정실</option>
-                    <option value="운동부">운동부</option><option value="교장">교장</option><option value="교감">교감</option>
-                </select>
-            </div>
-            <button onclick="handleAdd()" id="saveBtn" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold transition active:scale-95 shadow-lg">저장</button>
-        </section>
-
-        <div class="flex justify-center items-center mb-6">
-            <div onclick="shiftTime(-1)" class="nav-arrow">❮</div>
-            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[200px] tracking-tighter">데이터 로딩 중...</h2>
-            <div onclick="shiftTime(1)" class="nav-arrow">❯</div>
-        </div>
-
-        <div id="viewPort"></div>
-    </main>
-
-    <footer class="mt-12 pb-10 text-center">
-        <div class="inline-block px-4 py-1 bg-white border border-gray-100 rounded-full text-[10px] text-gray-400 shadow-sm">
-            Developed by <span class="font-bold text-gray-500 text-indigo-900">CHOI GWANG CHEUL</span>
+        <div class="
