@@ -555,35 +555,4 @@ html_code = '''<!DOCTYPE html>
         });
     </script>
 </body>
-</html>'''
-
-# 파일 저장
-with open('/tmp/index_완전수정.html', 'w', encoding='utf-8') as f:
-    f.write(html_code)
-
-print("✅ 모든 오류 수정 완료!")
-print("\n🔧 수정 내용:")
-print("   1. ⭐ Google Apps Script URL 적용됨!")
-print("   2. ⭐ 안내사항이 로컬에도 즉시 저장됨")
-print("   3. ⭐ 월간 갔다가 주간 돌아와도 안내사항 유지")
-print("   4. ⭐ 모든 주의 안내사항이 계속 누적 저장됨")
-print("   5. ⭐ 다음 주로 가면 새로 입력 가능 (빈 칸)")
-print("   6. ⭐ onblur → onchange로 변경 (더 확실한 저장)")
-print("\n✨ 작동 방식:")
-print("   - 이번 주(2월 16일~22일): 안내사항 입력 → 저장")
-print("   - 월간으로 이동 → 다시 주간 복귀 → 안내사항 그대로!")
-print("   - 다음 주로 이동(❯ 버튼) → 빈 칸 (새로 입력)")
-print("   - 다시 이전 주로(❮ 버튼) → 이전 안내사항 표시!")
-print("\n📌 다음 단계:")
-print("   1. index_완전수정.html 다운로드")
-print("   2. 파일명을 index.html로 변경")
-print("   3. GitHub Pages에 업로드")
-print("   4. 테스트!")
-print("\n🎯 테스트 시나리오:")
-print("   1. 주간 뷰 → 안내사항 입력")
-print("   2. 월간 뷰 → 다시 주간 뷰")
-print("   3. 안내사항 확인 ✅")
-print("   4. ❯ 버튼 클릭 (다음 주)")
-print("   5. 빈 칸 확인 ✅")
-print("   6. ❮ 버튼 클릭 (이전 주)")
-print("   7. 이전 안내사항 확인 ✅")
+</html>
