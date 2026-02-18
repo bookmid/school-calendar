@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례중 실시간 학사력</title>
+    <title>구례중 학사력</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
@@ -12,16 +12,17 @@
         .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; display: flex; flex-direction: column; }
         .bg-holiday { background-color: #fff1f2 !important; } 
         .bg-sat { background-color: #f0f7ff !important; }
-        .event-badge { font-size: 10px; padding: 2px 5px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; display: flex; justify-content: space-between; align-items: center; }
+        .event-badge { font-size: 10px; padding: 2px 5px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 2px solid #4f46e5; color: #3730a3; font-weight: 600; display: flex; justify-content: space-between; align-items: center; line-height: 1.2; }
         .holiday-badge { background-color: #ffe4e6; border-left: 2px solid #f43f5e; color: #9f1239; }
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 5px; font-size: 13px; flex-shrink: 0; }
+        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 5px; font-size: 14px; flex-shrink: 0; padding: 0 2px; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 10px; outline: none; width: 100%; font-size: 14px; }
-        .nav-arrow { font-size: 1.8rem; color: #cbd5e1; cursor: pointer; padding: 0 20px; }
-        
-        /* 모바일 전용 스타일 */
+        .nav-arrow { font-size: 1.8rem; color: #cbd5e1; cursor: pointer; transition: 0.2s; padding: 0 20px; user-select: none; }
+        .nav-arrow:hover { color: #4f46e5; }
+
+        /* 모바일 최적화 */
         @media (max-width: 640px) {
-            .btn-monthly { display: none !important; } /* 모바일에서 월간 버튼 숨김 */
-            #mainTitle { font-size: 1.25rem; line-height: 1.4; }
+            .pc-only { display: none !important; }
+            #mainTitle { font-size: 1.2rem; line-height: 1.4; }
             .day-cell { min-height: 90px; padding: 4px; }
         }
     </style>
@@ -30,9 +31,9 @@
     <nav class="bg-indigo-900 text-white p-4 shadow-xl sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-black">🏫 구례중 학사력</h1>
-            <div class="flex gap-2">
+            <div class="flex gap-2" id="viewButtons">
                 <button onclick="changeView('yearly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">1년</button>
-                <button onclick="changeView('monthly')" class="btn-monthly px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">월간</button>
+                <button onclick="changeView('monthly')" class="pc-only px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">월간</button>
                 <button onclick="changeView('weekly')" class="px-3 py-1 bg-indigo-700 rounded-lg text-xs font-bold transition">주간</button>
             </div>
         </div>
@@ -50,33 +51,44 @@
                     <option value="영양실">영양실</option>
                 </select>
             </div>
-            <button onclick="handleAdd()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">저장</button>
+            <button onclick="handleAdd()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">저장</button>
         </section>
 
         <div class="flex justify-center items-center mb-6">
             <div onclick="shiftTime(-1)" class="nav-arrow">❮</div>
-            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[200px]">데이터 로딩 중...</h2>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 text-center min-w-[220px]">데이터 확인 중...</h2>
             <div onclick="shiftTime(1)" class="nav-arrow">❯</div>
         </div>
 
         <div id="viewPort"></div>
     </main>
 
-    <footer class="mt-12 pb-10 text-center text-gray-400 text-[11px]">
-        Developed by <span class="font-bold text-indigo-900">Choi Gwang-cheul</span>, Gurye Middle School
+    <footer class="mt-12 pb-10 text-center">
+        <div class="inline-block px-4 py-2 bg-white border border-gray-200 rounded-full text-[11px] text-gray-400 shadow-sm">
+            Developed by <span class="font-bold text-indigo-900">Choi Gwang-cheul</span>, Gurye Middle School
+        </div>
     </footer>
 
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
         let events = [];
         let curDate = new Date();
-        let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly'; // 모바일은 주간계획 기본
-
+        // 모바일일 경우 초기 뷰를 주간으로 설정
+        let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
         const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
-        const kHolidays = { '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날', '2026-03-01': '삼일절', '2026-05-05': '어린이날', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-10-03': '개천절', '2026-10-09': '한글날', '2026-12-25': '성탄절' };
 
-        // 날짜 보정 함수
-        function toFixedDateStr(d) {
+        const kHolidays = {
+            '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날',
+            '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날',
+            '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-10-03': '개천절', '2026-10-09': '한글날', '2026-12-25': '성탄절'
+        };
+
+        // 날짜 보정 함수: ISO 문자열에서 날짜 부분만 추출
+        function getSafeDateStr(dateInput) {
+            if (typeof dateInput === 'string' && dateInput.includes('T')) {
+                return dateInput.split('T')[0];
+            }
+            const d = new Date(dateInput);
             return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
         }
 
@@ -86,9 +98,9 @@
                 const data = await res.json();
                 events = data.map(e => ({
                     id: e.id,
-                    date: e.date.split('T')[0], // 시차 오류 방지 위해 T 이전 값만 사용
+                    date: getSafeDateStr(e.date),
                     title: e.title,
-                    dapt: e.dapt || '미지정'
+                    dapt: e.dapt || '교무부'
                 }));
                 render();
             } catch(e) { document.getElementById('mainTitle').innerText = "연결 오류"; }
@@ -98,14 +110,18 @@
             const date = document.getElementById('inputDate').value;
             const title = document.getElementById('inputTitle').value;
             const dapt = document.getElementById('inputDept').value;
-            if(!date || !title) return alert("입력 확인!");
+            if(!date || !title) return alert("날짜와 내용을 입력하세요!");
+            
             const temp = { id: Date.now().toString(), date, title, dapt };
-            events.push(temp); render();
+            events.push(temp); 
+            render();
+            document.getElementById('inputTitle').value = '';
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...temp }) });
         }
 
         function deleteEvent(id) {
-            if(!confirm("삭제하시겠습니까?")) return;
+            event.stopPropagation();
+            if(!confirm("정말 삭제하시겠습니까?")) return;
             events = events.filter(e => e.id.toString() !== id.toString());
             render();
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id: id.toString() }) });
@@ -118,4 +134,94 @@
             render();
         }
 
-        function changeView(v) { cur
+        function changeView(v) { 
+            curView = v; 
+            render(); 
+        }
+
+        function render() {
+            const port = document.getElementById('viewPort');
+            const head = document.getElementById('mainTitle');
+            const y = curDate.getFullYear(), m = curDate.getMonth();
+            port.innerHTML = '';
+
+            if(curView === 'monthly') {
+                head.innerText = `${y}년 ${m + 1}월`;
+                let html = '<div class="calendar-grid">';
+                dayLabels.forEach((d,i) => {
+                    html += `<div class="bg-gray-50 p-2 text-center text-[11px] font-bold ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-400'}">${d}</div>`;
+                });
+                const firstDay = new Date(y, m, 1).getDay();
+                const lastDate = new Date(y, m + 1, 0).getDate();
+                for(let i=0; i<firstDay; i++) html += '<div class="day-cell bg-gray-50/30"></div>';
+                for(let d=1; d<=lastDate; d++) {
+                    const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                    const dayIdx = new Date(y, m, d).getDay();
+                    const hName = kHolidays[ds];
+                    const isSun = dayIdx === 0, isSat = dayIdx === 6;
+                    const redClass = (isSun || hName) ? 'bg-holiday' : isSat ? 'bg-sat' : '';
+                    
+                    html += `<div class="day-cell ${redClass}">
+                                <div class="text-[11px] font-bold ${isSun || hName ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-gray-400'}">${d}</div>
+                                <div class="flex-1 overflow-y-auto">`;
+                    if(hName) html += `<div class="event-badge holiday-badge">${hName}</div>`;
+                    events.filter(e => e.date === ds).forEach(e => {
+                        html += `<div class="event-badge">
+                                    <span class="truncate">[${e.dapt}] ${e.title}</span>
+                                    <span class="del-btn" onclick="deleteEvent('${e.id}')">✕</span>
+                                 </div>`;
+                    });
+                    html += `</div></div>`;
+                }
+                port.innerHTML = html + '</div>';
+            } 
+            else if(curView === 'weekly') {
+                const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
+                head.innerHTML = window.innerWidth <= 640 ? `${start.getFullYear()}년 ${start.getMonth()+1}월<br>주간 계획` : `${start.getFullYear()}년 ${start.getMonth()+1}월 주간 계획`;
+                let html = '<div class="space-y-3">';
+                for(let i=0; i<7; i++) {
+                    const d = new Date(start); d.setDate(start.getDate() + i);
+                    const ds = getSafeDateStr(d);
+                    const hName = kHolidays[ds];
+                    const isSun = i === 0, isSat = i === 6;
+                    html += `<div class="p-4 rounded-2xl border ${hName || isSun ? 'bg-holiday border-red-100' : isSat ? 'bg-sat border-blue-100' : 'bg-white'} flex items-center shadow-sm">
+                        <div class="w-16 text-center font-black mr-4 border-r pr-4">
+                            <div class="text-xl ${hName || isSun ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-indigo-900'}">${d.getDate()}</div>
+                            <div class="text-[10px] text-gray-400">(${dayLabels[i]})</div>
+                        </div>
+                        <div class="flex-1">
+                            ${hName ? `<div class="event-badge holiday-badge mb-1 w-fit">${hName}</div>` : ''}`;
+                    events.filter(e => e.date === ds).forEach(e => {
+                        html += `<div class="event-badge mb-1">
+                                    <span>[${e.dapt}] ${e.title}</span>
+                                    <span class="del-btn" onclick="deleteEvent('${e.id}')">✕</span>
+                                 </div>`;
+                    });
+                    html += `</div></div>`;
+                }
+                port.innerHTML = html + '</div>';
+            }
+            else if(curView === 'yearly') {
+                head.innerText = `${y}년 전체 학사`;
+                let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">';
+                for(let i=0; i<12; i++) {
+                    html += `<div class="bg-white p-3 rounded-xl border shadow-sm"><div class="font-bold text-indigo-600 mb-1 border-b">${i+1}월</div>`;
+                    for(let d=1; d<=31; d++) {
+                        const target = new Date(y, i, d);
+                        if(target.getMonth() !== i) continue;
+                        const ds = `${y}-${String(i+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                        const hName = kHolidays[ds];
+                        const dayEvents = events.filter(e => e.date === ds);
+                        if(hName || dayEvents.length > 0) {
+                            html += `<div class="text-[9px] mb-0.5 ${hName?'text-red-500 font-bold':''}"><strong>${d}</strong> ${hName || ''} ${dayEvents.map(e=>'['+e.dapt+']'+e.title).join(', ')}</div>`;
+                        }
+                    }
+                    html += '</div>';
+                }
+                port.innerHTML = html + '</div>';
+            }
+        }
+        window.onload = fetchEvents;
+    </script>
+</body>
+</html>
