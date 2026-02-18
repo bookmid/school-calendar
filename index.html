@@ -14,8 +14,8 @@
         .bg-sat { background-color: #f0f7ff !important; }
         .event-badge { font-size: 11px; padding: 4px 8px; margin-top: 2px; border-radius: 6px; background-color: #f1f5f9; border-left: 4px solid #6366f1; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
         .holiday-badge { background-color: #ffe4e6; border-left: 4px solid #f43f5e; color: #9f1239; }
-        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 8px; font-size: 16px; padding: 0 4px; }
-        @media (max-width: 640px) { .pc-only { display: none !important; } .day-cell { min-height: 90px; } }
+        .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 8px; font-size: 16px; padding: 0 4px; line-height: 1; }
+        @media (max-width: 640px) { .pc-only { display: none !important; } .day-cell { min-height: 95px; } .event-badge { font-size: 10px; } }
     </style>
 </head>
 <body>
@@ -23,9 +23,9 @@
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="font-black text-lg tracking-tight">🏫 구례중 실시간 학사력</h1>
             <div class="flex gap-1">
-                <button onclick="window.setView('yearly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">1년</button>
-                <button onclick="window.setView('monthly')" class="pc-only px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">월간</button>
-                <button onclick="window.setView('weekly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">주간</button>
+                <button onclick="window.setView('yearly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">1년</button>
+                <button onclick="window.setView('monthly')" class="pc-only px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">월간</button>
+                <button onclick="window.setView('weekly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">주간</button>
             </div>
         </div>
     </nav>
@@ -40,13 +40,13 @@
                     <option value="창의">창의부</option><option value="학년">학년부</option><option value="행정">행정실</option>
                 </select>
             </div>
-            <button onclick="window.handleAdd()" class="col-span-2 md:col-span-1 bg-indigo-600 text-white h-[42px] rounded-xl font-black shadow-md">저장하기</button>
+            <button onclick="window.handleAdd()" class="col-span-2 md:col-span-1 bg-indigo-600 text-white h-[42px] rounded-xl font-black shadow-md active:scale-95 transition-all">저장하기</button>
         </section>
 
         <div class="flex justify-between items-center mb-4 bg-white rounded-xl py-2 shadow-sm border border-slate-100">
-            <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl">❮</button>
-            <h2 id="mainTitle" class="text-xl font-black text-slate-800 text-center flex-1">로딩 중...</h2>
-            <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl">❯</button>
+            <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❮</button>
+            <h2 id="mainTitle" class="text-xl font-black text-slate-800">데이터 로딩 중...</h2>
+            <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❯</button>
         </div>
 
         <div id="viewPort" class="min-h-[400px]"></div>
@@ -59,19 +59,17 @@
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
         let events = [];
-        let curDate = new Date(); // 화면 이동용 기준점
+        let curDate = new Date();
         let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
 
-        const kHolidays = {'2026-01-01':'신정','2026-03-01':'삼일절','2026-05-05':'어린이날','2026-06-06':'현충일','2026-08-15':'광복절','2026-10-03':'개천절','2026-10-09':'한글날','2026-12-25':'성탄절'};
-
-        // 날짜를 시차 없이 "YYYY-MM-DD" 문자열로만 생성 (계산 방지)
         const toKey = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
         window.render = function() {
             const port = document.getElementById('viewPort');
             const head = document.getElementById('mainTitle');
             const y = curDate.getFullYear(), m = curDate.getMonth();
-            
+            port.innerHTML = '';
+
             if (curView === 'monthly') {
                 head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid">';
@@ -81,29 +79,27 @@
                 for (let i = 0; i < firstDay; i++) html += '<div class="day-cell bg-slate-50/50"></div>';
                 for (let d = 1; d <= lastDate; d++) {
                     const key = toKey(y, m, d);
-                    const isSun = new Date(y, m, d).getDay() === 0;
-                    const hName = kHolidays[key];
-                    html += `<div class="day-cell ${isSun||hName?'bg-holiday':''}">
-                        <div class="text-[11px] font-black ${isSun||hName?'text-red-500':'text-slate-300'}">${d}</div>
+                    const dayIdx = new Date(y, m, d).getDay();
+                    html += `<div class="day-cell ${dayIdx===0?'bg-holiday':dayIdx===6?'bg-sat':''}">
+                        <div class="text-[11px] font-black ${dayIdx===0?'text-red-500':dayIdx===6?'text-blue-600':'text-slate-300'}">${d}</div>
                         <div class="flex-1 overflow-y-auto">
-                            ${hName?`<div class="event-badge holiday-badge">${hName}</div>`:''}
                             ${events.filter(e => e.date === key).map(e => `<div class="event-badge"><span>${e.title} (${e.dapt})</span><span class="del-btn" onclick="window.deleteEvent('${e.id}')">✕</span></div>`).join('')}
                         </div></div>`;
                 }
                 port.innerHTML = html + '</div>';
             } 
             else if (curView === 'weekly') {
-                const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
-                head.innerText = `${start.getFullYear()}년 ${start.getMonth()+1}월 주간`;
+                const temp = new Date(curDate);
+                temp.setDate(curDate.getDate() - curDate.getDay());
+                head.innerText = `${temp.getFullYear()}년 ${temp.getMonth()+1}월 주간`;
                 let html = '<div class="flex flex-col gap-2">';
                 for (let i = 0; i < 7; i++) {
-                    const d = new Date(start); d.setDate(start.getDate() + i);
+                    const d = new Date(temp); d.setDate(temp.getDate() + i);
                     const key = toKey(d.getFullYear(), d.getMonth(), d.getDate());
-                    const hName = kHolidays[key];
                     html += `<div class="p-4 rounded-xl border bg-white flex items-center shadow-sm">
                         <div class="w-12 text-center mr-4 border-r pr-4 font-black text-indigo-900">${d.getDate()}</div>
-                        <div class="flex-1">${hName?`<div class="event-badge holiday-badge mb-1">${hName}</div>`:''}
-                            ${events.filter(e => e.date === key).map(e => `<div class="event-badge py-2"><span>${e.title} (${e.dapt})</span><span class="del-btn" onclick="window.deleteEvent('${e.id}')">✕</span></div>`).join('')}
+                        <div class="flex-1">
+                            ${events.filter(e => e.date === key).map(e => `<div class="event-badge py-2 mb-1"><span>${e.title} (${e.dapt})</span><span class="del-btn" onclick="window.deleteEvent('${e.id}')">✕</span></div>`).join('')}
                         </div></div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -112,12 +108,12 @@
                 head.innerText = `${y}년 전체 학사`;
                 let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-2">';
                 for (let im = 0; im < 12; im++) {
-                    html += `<div class="bg-white p-2 rounded-lg border text-[10px] h-40 overflow-y-auto"><div class="font-bold text-indigo-600 border-b mb-1">${im+1}월</div>`;
+                    html += `<div class="bg-white p-2 rounded-lg border text-[10px] h-48 overflow-y-auto"><div class="font-bold text-indigo-600 border-b mb-1">${im+1}월</div>`;
                     for (let id = 1; id <= 31; id++) {
                         const check = new Date(y, im, id); if (check.getMonth() !== im) continue;
                         const key = toKey(y, im, id);
                         const dayEvents = events.filter(e => e.date === key);
-                        if (dayEvents.length > 0) html += `<div><b>${id}일</b> ${dayEvents.map(e=>`${e.title}(${e.dapt})`).join(',')}</div>`;
+                        if (dayEvents.length > 0) html += `<div class="mb-0.5"><b>${id}</b> ${dayEvents.map(e=>`${e.title}(${e.dapt})`).join(', ')}</div>`;
                     }
                     html += '</div>';
                 }
@@ -154,13 +150,14 @@
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
-                // 핵심: 서버 날짜가 어떻게 오든 앞 10자리 문자열만 사용 (시차 완전 차단)
+                // 핵심: 서버 날짜에서 앞 10자리 문자열만 정확히 추출 (시차 원천 봉쇄)
                 events = data.map(e => ({ ...e, date: String(e.date).substring(0, 10) }));
                 window.render();
             } catch (e) { console.error(e); }
         }
 
         window.render(); sync();
+        setInterval(sync, 10000);
     </script>
 </body>
 </html>
