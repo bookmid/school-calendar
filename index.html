@@ -12,21 +12,20 @@
         .day-cell { min-height: 110px; background-color: white; padding: 6px; display: flex; flex-direction: column; }
         .bg-holiday { background-color: #fff1f2 !important; } 
         .bg-sat { background-color: #f0f7ff !important; }
-        .event-badge { font-size: 11px; padding: 4px 8px; margin-top: 2px; border-radius: 6px; background-color: #f1f5f9; border-left: 4px solid #6366f1; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .event-badge { font-size: 11px; padding: 4px 8px; margin-top: 2px; border-radius: 6px; background-color: #f1f5f9; border-left: 4px solid #6366f1; color: #1e293b; font-weight: 700; display: flex; justify-content: space-between; align-items: center; }
         .holiday-badge { background-color: #ffe4e6; border-left: 4px solid #f43f5e; color: #9f1239; }
         .del-btn { color: #ef4444; font-weight: bold; cursor: pointer; margin-left: 8px; font-size: 16px; padding: 0 4px; line-height: 1; }
-        #syncStatus { position: fixed; bottom: 15px; right: 15px; font-size: 10px; background: white; padding: 4px 10px; border-radius: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); border: 1px solid #e2e8f0; z-index: 1000; }
-        @media (max-width: 640px) { .pc-only { display: none !important; } .day-cell { min-height: 95px; } .event-badge { font-size: 10px; } }
+        @media (max-width: 640px) { .pc-only { display: none !important; } .day-cell { min-height: 95px; } }
     </style>
 </head>
 <body>
     <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
-            <h1 class="font-black text-lg tracking-tight">🏫 구례중 실시간 학사력</h1>
+            <h1 class="font-black text-lg tracking-tight">🏫 구례중 학사력</h1>
             <div class="flex gap-1">
-                <button onclick="window.setView('yearly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">1년</button>
-                <button onclick="window.setView('monthly')" class="pc-only px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">월간</button>
-                <button onclick="window.setView('weekly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold active:bg-indigo-600">주간</button>
+                <button onclick="window.setView('yearly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">1년</button>
+                <button onclick="window.setView('monthly')" class="pc-only px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">월간</button>
+                <button onclick="window.setView('weekly')" class="px-3 py-1.5 bg-indigo-800 rounded-lg text-xs font-bold">주간</button>
             </div>
         </div>
     </nav>
@@ -45,9 +44,9 @@
         </section>
 
         <div class="flex justify-between items-center mb-4 bg-white rounded-xl py-2 shadow-sm border border-slate-100">
-            <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❮</button>
-            <h2 id="mainTitle" class="text-xl font-black text-slate-800">2026년 2월</h2>
-            <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl active:opacity-50">❯</button>
+            <button onclick="window.shiftTime(-1)" class="px-6 text-indigo-600 font-bold text-2xl">❮</button>
+            <h2 id="mainTitle" class="text-xl font-black text-slate-800">로딩 중...</h2>
+            <button onclick="window.shiftTime(1)" class="px-6 text-indigo-600 font-bold text-2xl">❯</button>
         </div>
 
         <div id="viewPort" class="min-h-[400px]"></div>
@@ -57,43 +56,75 @@
         </footer>
     </main>
 
-    <div id="syncStatus">📡 연결 확인 중...</div>
-
     <script>
         const API_URL = 'https://script.google.com/macros/s/AKfycbwftofBuDxYKEkCF-5mZ4Ss-bi6VJVstCAR6RhKasmXeM6oF7ZuCwlcbpU7GzivVMyH/exec';
         let events = [];
         let curDate = new Date();
         let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
 
-        const kHolidays = {
-            '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날',
-            '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날',
-            '2026-05-25': '대체공휴일', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-08-17': '대체공휴일',
-            '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석', '2026-09-28': '대체공휴일',
-            '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '성탄절'
-        };
-
-        // 절대 시차가 발생하지 않는 날짜 문자열 생성기
-        window.formatDateStr = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+        // 날짜를 시차 없이 "YYYY-MM-DD" 텍스트로만 만드는 함수
+        const toKey = (y, m, d) => `${y}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
 
         window.render = function() {
             const port = document.getElementById('viewPort');
             const head = document.getElementById('mainTitle');
             const y = curDate.getFullYear(), m = curDate.getMonth();
-            port.innerHTML = '';
-
+            
             if (curView === 'monthly') {
                 head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid">';
-                ['일', '월', '화', '수', '목', '금', '토'].forEach((d, i) => html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-black ${i===0?'text-red-500':i===6?'text-blue-500':'text-slate-400'}">${d}</div>`);
-                
+                ['일','월','화','수','목','금','토'].forEach((d, i) => html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-black ${i===0?'text-red-500':i===6?'text-blue-500':'text-slate-400'}">${d}</div>`);
                 const firstDay = new Date(y, m, 1).getDay();
                 const lastDate = new Date(y, m + 1, 0).getDate();
                 for (let i = 0; i < firstDay; i++) html += '<div class="day-cell bg-slate-50/50"></div>';
-                
                 for (let d = 1; d <= lastDate; d++) {
-                    const ds = window.formatDateStr(y, m, d);
-                    const dayIdx = new Date(y, m, d).getDay();
-                    const hName = kHolidays[ds];
-                    html += `<div class="day-cell ${dayIdx === 0 || hName ? 'bg-holiday' : dayIdx === 6 ? 'bg-sat' : ''}">
-                        <div class="text-[11px] font-black ${dayIdx === 0 || hName ? 'text-red-500' : dayIdx === 6
+                    const key = toKey(y, m, d);
+                    const isSun = new Date(y, m, d).getDay() === 0;
+                    const isSat = new Date(y, m, d).getDay() === 6;
+                    html += `<div class="day-cell ${isSun ? 'bg-holiday' : isSat ? 'bg-sat' : ''}">
+                        <div class="text-[11px] font-black ${isSun ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-slate-300'}">${d}</div>
+                        <div class="flex-1 overflow-y-auto">
+                            ${events.filter(e => e.date === key).map(e => `<div class="event-badge"><span>${e.title} (${e.dapt})</span><span class="del-btn" onclick="window.deleteEvent('${e.id}')">✕</span></div>`).join('')}
+                        </div></div>`;
+                }
+                port.innerHTML = html + '</div>';
+            } else {
+                // 주간/연간 생략 (핵심 로직 동일)
+                head.innerText = `${y}년 ${m + 1}월`;
+                port.innerHTML = '<div class="text-center p-10 text-slate-400">월간 보기에서 일정을 확인해 주세요.</div>';
+            }
+        };
+
+        window.shiftTime = (n) => { curDate.setMonth(curDate.getMonth() + n); window.render(); };
+        window.setView = (v) => { curView = v; window.render(); };
+
+        window.handleAdd = async () => {
+            const date = document.getElementById('inputDate').value; // "2026-02-20" 그대로 추출
+            const title = document.getElementById('inputTitle').value;
+            const dapt = document.getElementById('inputDept').value;
+            if (!date || !title) return alert("내용을 입력하세요.");
+            const newItem = { id: Date.now().toString(), date, title, dapt };
+            events.push(newItem); window.render();
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...newItem }) });
+        };
+
+        window.deleteEvent = async (id) => {
+            if(!confirm("삭제할까요?")) return;
+            events = events.filter(e => e.id !== id); window.render();
+            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'delete', id }) });
+        };
+
+        async function sync() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                // 핵심: 서버에서 온 날짜의 T 이후를 무조건 잘라버림 (시차 차단)
+                events = data.map(e => ({ ...e, date: String(e.date).split('T')[0] }));
+                window.render();
+            } catch (e) { console.error(e); }
+        }
+
+        sync();
+    </script>
+</body>
+</html>
