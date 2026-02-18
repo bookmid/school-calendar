@@ -49,7 +49,7 @@
                     <option value="학년부">학년부</option><option value="행정실">행정실</option>
                 </select>
             </div>
-            <button onclick="handleAdd()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg active:scale-95 transition">저장</button>
+            <button onclick="handleAdd()" class="w-full md:w-auto bg-indigo-600 text-white px-8 py-3 rounded-xl font-bold shadow-lg">저장</button>
         </section>
 
         <div class="flex justify-center items-center mb-6 text-center">
@@ -72,34 +72,31 @@
         let curView = window.innerWidth <= 640 ? 'weekly' : 'monthly';
         const dayLabels = ['일', '월', '화', '수', '목', '금', '토'];
 
+        // 2026년 공휴일 데이터 업데이트
         const kHolidays = {
-            '2026-01-01': '신정', '2026-01-28': '설날', '2026-01-29': '설날', '2026-01-30': '설날',
-            '2026-03-01': '삼일절', '2026-05-05': '어린이날', '2026-06-06': '현충일', '2026-08-15': '광복절',
-            '2026-10-03': '개천절', '2026-10-09': '한글날', '2026-12-25': '성탄절'
+            '2026-01-01': '신정', '2026-02-16': '설날', '2026-02-17': '설날', '2026-02-18': '설날',
+            '2026-03-01': '삼일절', '2026-03-02': '대체공휴일', '2026-05-05': '어린이날', '2026-05-24': '부처님오신날',
+            '2026-05-25': '대체공휴일', '2026-06-06': '현충일', '2026-08-15': '광복절', '2026-08-17': '대체공휴일',
+            '2026-09-24': '추석', '2026-09-25': '추석', '2026-09-26': '추석', '2026-09-28': '대체공휴일',
+            '2026-10-03': '개천절', '2026-10-05': '대체공휴일', '2026-10-09': '한글날', '2026-12-25': '성탄절'
         };
 
-        // 핵심: 시스템 타임존 영향을 안 받는 날짜 문자열 생성 함수
         function getRawDateStr(year, month, day) {
             return `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
         }
 
-        // 실시간 업데이트 함수 (5초 간격)
         async function syncEvents() {
             try {
                 const res = await fetch(API_URL);
                 const data = await res.json();
-                // 서버 데이터의 날짜 부분(YYYY-MM-DD)만 추출하여 시차 원천 차단
                 const newEvents = data.map(e => ({
                     id: e.id,
                     date: e.date.split('T')[0], 
                     title: e.title,
                     dapt: e.dapt || '교무부'
                 }));
-                
-                // 데이터 변경이 있을 때만 렌더링 (깜빡임 방지)
                 if (JSON.stringify(events) !== JSON.stringify(newEvents)) {
-                    events = newEvents;
-                    render();
+                    events = newEvents; render();
                 }
             } catch(e) { console.error("동기화 오류"); }
         }
@@ -108,15 +105,11 @@
             const date = document.getElementById('inputDate').value;
             const title = document.getElementById('inputTitle').value;
             const dapt = document.getElementById('inputDept').value;
-            if(!date || !title) return alert("내용을 입력해주세요.");
-            
+            if(!date || !title) return alert("입력 확인!");
             const temp = { id: Date.now().toString(), date, title, dapt };
-            // 낙관적 업데이트: 서버 응답 전 즉시 반영
-            events.push(temp); 
-            render();
-            
-            document.getElementById('inputTitle').value = '';
+            events.push(temp); render();
             fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', ...temp }) });
+            document.getElementById('inputTitle').value = '';
         }
 
         function deleteEvent(id) {
@@ -146,20 +139,16 @@
                 head.innerText = `${y}년 ${m + 1}월`;
                 let html = '<div class="calendar-grid">';
                 dayLabels.forEach((d,i) => html += `<div class="bg-gray-50 p-2 text-center text-[10px] font-bold ${i===0?'text-red-500':i===6?'text-blue-500':'text-gray-400'}">${d}</div>`);
-                
                 const firstDay = new Date(y, m, 1).getDay();
                 const lastDate = new Date(y, m + 1, 0).getDate();
                 for(let i=0; i<firstDay; i++) html += '<div class="day-cell bg-gray-50/30"></div>';
-                
                 for(let d=1; d<=lastDate; d++) {
-                    const ds = getRawDateStr(y, m, d); // 시차 없는 날짜 생성
+                    const ds = getRawDateStr(y, m, d);
                     const dayIdx = new Date(y, m, d).getDay();
                     const hName = kHolidays[ds];
-                    const isHoliday = dayIdx === 0 || hName;
-                    const isSat = dayIdx === 6;
-                    
-                    html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : isSat ? 'bg-sat' : ''}">
-                                <div class="text-[11px] font-bold ${isHoliday ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-gray-400'}">${d}</div>
+                    const isSun = dayIdx === 0, isSat = dayIdx === 6;
+                    html += `<div class="day-cell ${isSun || hName ? 'bg-holiday' : isSat ? 'bg-sat' : ''}">
+                                <div class="text-[11px] font-bold ${isSun || hName ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-gray-400'}">${d}</div>
                                 <div class="flex-1 overflow-y-auto">`;
                     if(hName) html += `<div class="event-badge holiday-badge">${hName}</div>`;
                     events.filter(e => e.date === ds).forEach(e => {
@@ -170,55 +159,9 @@
                 port.innerHTML = html + '</div>';
             } 
             else if(curView === 'weekly') {
-                const start = new Date(curDate); 
-                start.setDate(curDate.getDate() - curDate.getDay());
+                const start = new Date(curDate); start.setDate(curDate.getDate() - curDate.getDay());
                 head.innerHTML = window.innerWidth <= 640 ? `${y}년 ${start.getMonth()+1}월<br>주간 계획` : `${y}년 ${start.getMonth()+1}월 주간 계획`;
-                
                 let html = '<div class="space-y-3">';
                 for(let i=0; i<7; i++) {
-                    const d = new Date(start); 
-                    d.setDate(start.getDate() + i);
-                    const ds = getRawDateStr(d.getFullYear(), d.getMonth(), d.getDate());
-                    const hName = kHolidays[ds];
-                    const isSun = i === 0, isSat = i === 6;
-                    
-                    html += `<div class="p-4 rounded-2xl border ${hName || isSun ? 'bg-holiday border-red-100' : isSat ? 'bg-sat border-blue-100' : 'bg-white'} flex items-center shadow-sm">
-                        <div class="w-16 text-center mr-4 border-r pr-4">
-                            <div class="text-xl font-black ${hName || isSun ? 'text-red-500' : isSat ? 'text-blue-600' : 'text-indigo-900'}">${d.getDate()}</div>
-                            <div class="text-[10px] text-gray-400">(${dayLabels[i]})</div>
-                        </div>
-                        <div class="flex-1">${hName ? `<div class="event-badge holiday-badge mb-1 w-fit">${hName}</div>` : ''}`;
-                    events.filter(e => e.date === ds).forEach(e => {
-                        html += `<div class="event-badge mb-1"><span>[${e.dapt}] ${e.title}</span><span class="del-btn" onclick="deleteEvent('${e.id}')">✕</span></div>`;
-                    });
-                    html += `</div></div>`;
-                }
-                port.innerHTML = html + '</div>';
-            }
-            else if(curView === 'yearly') {
-                head.innerText = `${y}년 전체 학사`;
-                let html = '<div class="grid grid-cols-2 md:grid-cols-4 gap-3">';
-                for(let i=0; i<12; i++) {
-                    html += `<div class="bg-white p-3 rounded-xl border shadow-sm"><div class="font-bold text-indigo-600 mb-1 border-b text-sm">${i+1}월</div>`;
-                    for(let d=1; d<=31; d++) {
-                        const target = new Date(y, i, d);
-                        if(target.getMonth() !== i) continue;
-                        const ds = getRawDateStr(y, i, d);
-                        const hName = kHolidays[ds];
-                        const dayEvents = events.filter(e => e.date === ds);
-                        if(hName || dayEvents.length > 0) {
-                            html += `<div class="text-[9px] mb-0.5 ${hName?'text-red-500 font-bold':''}"><strong>${d}</strong> ${hName || ''} ${dayEvents.map(e=>'['+e.dapt+']'+e.title).join(', ')}</div>`;
-                        }
-                    }
-                    html += '</div>';
-                }
-                port.innerHTML = html + '</div>';
-            }
-        }
-
-        // 초기 실행 및 5초 간격 자동 동기화 설정
-        syncEvents();
-        setInterval(syncEvents, 5000); 
-    </script>
-</body>
-</html>
+                    const d = new Date(start); d.setDate(start.getDate() + i);
+                    const ds = getRawDateStr(
