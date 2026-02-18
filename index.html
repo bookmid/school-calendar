@@ -7,140 +7,174 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; text-align: center; background-color: #f9fafb; margin: 0; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); background-color: #e5e7eb; gap: 1px; border: 1px solid #e5e7eb; }
-        .day-cell { min-height: 110px; background-color: white; padding: 6px; text-align: left; vertical-align: top; }
-        input, select, button { text-align: center; border-radius: 0.5rem; }
-        .event-item { font-size: 10px; padding: 2px 4px; margin-bottom: 2px; border-radius: 4px; border-left: 3px solid #3b82f6; background-color: #eff6ff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        @media (max-width: 640px) { .day-cell { min-height: 80px; font-size: 0.75rem; } }
+        body { font-family: 'Pretendard', sans-serif; text-align: center; background-color: #f3f4f6; margin: 0; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e5e7eb; border: 1px solid #e5e7eb; }
+        .day-cell { min-height: 120px; background-color: white; padding: 8px; text-align: left; }
+        .event-badge { font-size: 10px; padding: 2px 4px; margin-top: 2px; border-radius: 4px; background-color: #eff6ff; border-left: 3px solid #3b82f6; color: #1e40af; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        input, select, button { text-align: center; }
+        @media (max-width: 640px) { .day-cell { min-height: 80px; } .event-badge { font-size: 8px; } }
     </style>
 </head>
 <body>
 
-    <nav class="bg-blue-900 text-white p-4 shadow-lg sticky top-0 z-50">
+    <nav class="bg-indigo-900 text-white p-4 shadow-lg sticky top-0 z-50">
         <div class="container mx-auto flex justify-between items-center">
             <h1 class="text-xl font-bold cursor-pointer" onclick="location.reload()">🏫 구례중학교 학사력</h1>
             <div class="flex gap-2">
-                <button onclick="changeView('yearly')" class="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-sm font-bold transition">1년</button>
-                <button onclick="changeView('monthly')" class="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-sm font-bold transition">월간</button>
-                <button onclick="changeView('weekly')" class="px-4 py-1.5 bg-blue-700 hover:bg-blue-800 rounded-lg text-sm font-bold transition">주간</button>
+                <button onclick="setView('yearly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">1년</button>
+                <button onclick="setView('monthly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">월간</button>
+                <button onclick="setView('weekly')" class="px-3 py-1 bg-indigo-700 hover:bg-indigo-800 rounded font-bold transition">주간</button>
             </div>
         </div>
     </nav>
 
     <main class="container mx-auto p-4 max-w-6xl">
-        <section class="bg-white p-6 rounded-2xl shadow-sm border mb-6">
-            <h2 class="text-lg font-bold mb-4 text-blue-900">📝 학사 일정 등록</h2>
+        <section class="bg-white p-6 rounded-2xl shadow-sm mb-6 border border-gray-200">
             <div class="flex flex-col md:flex-row justify-center items-center gap-3">
-                <input type="date" id="eventDate" class="w-full md:w-auto border border-gray-300 p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
-                <input type="text" id="eventTitle" placeholder="행사 내용을 입력하세요" class="w-full md:w-80 border border-gray-300 p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
-                <select id="eventDept" class="w-full md:w-auto border border-gray-300 p-2.5 outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">부서 선택</option>
-                    <option value="교무부">교무부</option>
-                    <option value="연구부">연구부</option>
-                    <option value="학생부">학생부</option>
-                    <option value="창의인성부">창의인성부</option>
-                    <option value="교감">교감</option>
-                    <option value="교장">교장</option>
-                    <option value="기타">기타</option>
-                </select>
-                <button onclick="addEvent()" class="w-full md:w-32 bg-blue-600 text-white p-2.5 font-bold hover:bg-blue-700 shadow-md active:scale-95 transition">일정 저장</button>
+                <div class="flex flex-col items-start w-full md:w-auto">
+                    <label class="text-xs font-bold text-gray-500 mb-1 ml-1">날짜</label>
+                    <input type="date" id="dateIn" class="border p-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex flex-col items-start w-full md:w-64">
+                    <label class="text-xs font-bold text-gray-500 mb-1 ml-1">행사 내용</label>
+                    <input type="text" id="titleIn" placeholder="내용 입력" class="border p-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-indigo-500">
+                </div>
+                <div class="flex flex-col items-start w-full md:w-auto">
+                    <label class="text-xs font-bold text-gray-500 mb-1 ml-1">관련 부서</label>
+                    <select id="deptIn" class="border p-2 rounded-lg w-full outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="교무부">교무부</option>
+                        <option value="연구부">연구부</option>
+                        <option value="학생부">학생부</option>
+                        <option value="창의인성부">창의인성부</option>
+                        <option value="교감">교감</option>
+                        <option value="교장">교장</option>
+                        <option value="기타">기타</option>
+                    </select>
+                </div>
+                <button onclick="handleAdd()" class="w-full md:w-24 mt-5 bg-indigo-600 text-white p-2 rounded-lg font-bold hover:bg-indigo-700 shadow-md transition active:scale-95">저장</button>
             </div>
-            <p class="text-xs text-gray-400 mt-3 font-medium">* 부서는 선택 시 유지되며, 행사 내용만 초기화됩니다.</p>
         </section>
 
-        <div class="flex justify-center items-center gap-6 mb-6 py-2">
-            <button onclick="moveTime(-1)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M15 19l-7-7 7-7"></path></svg></button>
-            <h2 id="viewTitle" class="text-xl md:text-2xl font-extrabold text-gray-800 min-w-[280px]">화면 준비 중...</h2>
-            <button onclick="moveTime(1)" class="p-2 text-blue-600 hover:bg-blue-50 rounded-full transition"><svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M9 5l7 7-7 7"></path></svg></button>
+        <div class="flex justify-center items-center gap-10 mb-6">
+            <button onclick="shiftTime(-1)" class="text-indigo-600 hover:scale-125 transition text-2xl font-bold">◀</button>
+            <h2 id="mainTitle" class="text-2xl font-extrabold text-gray-800 min-w-[250px]">달력 불러오는 중...</h2>
+            <button onclick="shiftTime(1)" class="text-indigo-600 hover:scale-125 transition text-2xl font-bold">▶</button>
         </div>
 
-        <div id="contentArea" class="bg-white p-2 md:p-6 rounded-2xl shadow-xl min-h-[500px]"></div>
+        <div id="viewPort" class="bg-white p-4 rounded-2xl shadow-xl min-h-[500px]"></div>
     </main>
 
     <script>
-        // 데이터 불러오기 및 초기화 (데이터 충돌 방지 로직 포함)
-        let events = [];
-        try {
-            const saved = localStorage.getItem('gure_final_data');
-            events = saved ? JSON.parse(saved) : [];
-        } catch (e) {
-            events = [];
-            localStorage.removeItem('gure_final_data');
-        }
+        // 데이터 저장소 (충돌 방지를 위한 새 키 이름)
+        const STORAGE_KEY = 'GURE_SCHOOL_APP_V1';
+        let events = JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+        let curDate = new Date();
+        let curView = 'monthly';
 
-        let currentView = 'monthly';
-        let viewDate = new Date();
+        // 일정 추가 (부서/날짜 유지)
+        function handleAdd() {
+            const date = document.getElementById('dateIn').value;
+            const title = document.getElementById('titleIn').value;
+            const dept = document.getElementById('deptIn').value;
 
-        function addEvent() {
-            const date = document.getElementById('eventDate').value;
-            const title = document.getElementById('eventTitle').value;
-            const dept = document.getElementById('eventDept').value;
-            if(!date || !title || !dept) return alert("날짜, 내용, 부서를 모두 확인해주세요!");
-            
+            if(!date || !title) return alert("날짜와 내용을 입력해주세요!");
+
             events.push({ id: Date.now(), date, title, dept });
-            localStorage.setItem('gure_final_data', JSON.stringify(events));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
             
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventTitle').focus();
+            document.getElementById('titleIn').value = '';
+            document.getElementById('titleIn').focus();
             render();
         }
 
-        function deleteEvent(id) {
-            if(!confirm("이 일정을 삭제할까요?")) return;
+        function deleteEv(id) {
+            if(!confirm("삭제하시겠습니까?")) return;
             events = events.filter(e => e.id !== id);
-            localStorage.setItem('gure_final_data', JSON.stringify(events));
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(events));
             render();
         }
 
-        function moveTime(n) {
-            if(currentView === 'yearly') viewDate.setFullYear(viewDate.getFullYear() + n);
-            else if(currentView === 'monthly') viewDate.setMonth(viewDate.getMonth() + n);
-            else if(currentView === 'weekly') viewDate.setDate(viewDate.getDate() + (n * 7));
+        function setView(v) { curView = v; render(); }
+        function shiftTime(n) {
+            if(curView === 'yearly') curDate.setFullYear(curDate.getFullYear() + n);
+            else if(curView === 'monthly') curDate.setMonth(curDate.getMonth() + n);
+            else if(curView === 'weekly') curDate.setDate(curDate.getDate() + (n * 7));
             render();
         }
-
-        function changeView(v) { currentView = v; render(); }
 
         function render() {
-            const area = document.getElementById('contentArea');
-            const title = document.getElementById('viewTitle');
-            if(!area) return;
-            area.innerHTML = '';
+            const port = document.getElementById('viewPort');
+            const head = document.getElementById('mainTitle');
+            if(!port) return;
+            port.innerHTML = '';
 
-            const y = viewDate.getFullYear();
-            const m = viewDate.getMonth();
+            try {
+                if(curView === 'monthly') renderMonthly(port, head);
+                else if(curView === 'weekly') renderWeekly(port, head);
+                else if(curView === 'yearly') renderYearly(port, head);
+            } catch(e) {
+                port.innerHTML = '<div class="p-20 text-red-500">화면을 그리는 중 오류가 발생했습니다. 새로고침 해주세요.</div>';
+            }
+        }
 
-            if(currentView === 'monthly') {
-                title.innerText = `${y}년 ${m + 1}월 계획`;
-                let html = '<div class="calendar-grid">';
-                ['일','월','화','수','목','금','토'].forEach(d => html += `<div class="bg-gray-50 p-3 font-bold text-xs text-center border-b border-gray-200">${d}</div>`);
-                
-                const firstDay = new Date(y, m, 1).getDay();
-                const lastDate = new Date(y, m + 1, 0).getDate();
-                
-                for(let i=0; i<firstDay; i++) html += '<div class="day-cell bg-gray-50/50"></div>';
-                for(let d=1; d<=lastDate; d++) {
-                    const dStr = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
-                    const items = events.filter(e => e.date === dStr);
-                    html += `<div class="day-cell"><div class="text-xs font-bold mb-2 text-gray-400">${d}</div>`;
-                    items.forEach(e => html += `<div class="event-item" title="${e.title}">[${e.dept}] ${e.title}</div>`);
-                    html += `</div>`;
-                }
-                area.innerHTML = html + '</div>';
+        function renderMonthly(port, head) {
+            const y = curDate.getFullYear(), m = curDate.getMonth();
+            head.innerText = `${y}년 ${m + 1}월 계획`;
+            
+            let html = '<div class="calendar-grid">';
+            ['일','월','화','수','목','금','토'].forEach(d => html += `<div class="bg-gray-100 p-2 font-bold text-xs">${d}</div>`);
+            
+            const first = new Date(y, m, 1).getDay();
+            const last = new Date(y, m + 1, 0).getDate();
+            
+            for(let i=0; i<first; i++) html += '<div class="day-cell bg-gray-50/50"></div>';
+            for(let d=1; d<=last; d++) {
+                const ds = `${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const match = events.filter(e => e.date === ds);
+                html += `<div class="day-cell"><div class="text-xs font-bold text-gray-400 mb-1">${d}</div>`;
+                match.forEach(e => html += `<div class="event-badge" title="${e.title}">[${e.dept}] ${e.title}</div>`);
+                html += `</div>`;
+            }
+            port.innerHTML = html + '</div>';
+        }
 
-            } else if(currentView === 'weekly') {
-                const tempDate = new Date(viewDate);
-                const day = tempDate.getDay();
-                const diff = tempDate.getDate() - day + (day === 0 ? -6 : 1);
-                const mon = new Date(tempDate.setDate(diff));
-                const fri = new Date(new Date(mon).getTime() + (4 * 24 * 60 * 60 * 1000));
-                
-                const fmt = (t) => `${t.getMonth()+1}.${t.getDate()}.(${['일','월','화','수','목','금','토'][t.getDay()]})`;
-                title.innerText = `주간계획 (${fmt(mon)} - ${fmt(fri)})`;
+        function renderWeekly(port, head) {
+            const d = new Date(curDate);
+            const day = d.getDay();
+            const diff = d.getDate() - day + (day === 0 ? -6 : 1);
+            const mon = new Date(d.setDate(diff));
+            const fri = new Date(new Date(mon).getTime() + (4 * 24 * 60 * 60 * 1000));
+            
+            const f = (t) => `${t.getMonth()+1}/${t.getDate()}(${['일','월','화','수','목','금','토'][t.getDay()]})`;
+            head.innerText = `${f(mon)} - ${f(fri)}`;
 
-                const startStr = mon.toISOString().split('T')[0];
-                const endStr = fri.toISOString().split('T')[0];
-                const items = events.filter(e => e.date >= startStr && e.date <= endStr).sort((a,b)=>a.date.localeCompare(b.date));
+            const sStr = mon.toISOString().split('T')[0];
+            const eStr = fri.toISOString().split('T')[0];
+            const list = events.filter(e => e.date >= sStr && e.date <= eStr).sort((a,b)=>a.date.localeCompare(b.date));
 
-                let html = '<div class="overflow-x-auto"><table class
+            let html = '<table class="w-full text-sm"><thead><tr class="bg-indigo-50 border-b-2 border-indigo-100"><th class="p-4">날짜</th><th class="p-4">부서</th><th class="p-4 text-left">행사 내용</th><th class="p-4">삭제</th></tr></thead><tbody>';
+            list.forEach(e => {
+                const dayLab = ['일','월','화','수','목','금','토'][new Date(e.date).getDay()];
+                html += `<tr class="border-b hover:bg-gray-50"><td class="p-4">${e.date.slice(5)} (${dayLab})</td><td class="p-4"><span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded-md font-bold text-xs">${e.dept}</span></td><td class="p-4 text-left font-bold text-gray-700">${e.title}</td><td class="p-4"><button onclick="deleteEv(${e.id})" class="text-red-300 hover:text-red-600 transition">✕</button></td></tr>`;
+            });
+            port.innerHTML = html + (list.length ? '' : '<tr><td colspan="4" class="p-20 text-gray-400">일정이 없습니다.</td></tr>') + '</tbody></table>';
+        }
+
+        function renderYearly(port, head) {
+            const y = curDate.getFullYear();
+            head.innerText = `${y}학년도 전체 학사력`;
+            let html = '<div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 text-left">';
+            for(let m=0; m<12; m++) {
+                const mList = events.filter(e => { const d = new Date(e.date); return d.getFullYear() === y && d.getMonth() === m; }).sort((a,b)=>a.date.localeCompare(b.date));
+                html += `<div class="border p-4 rounded-xl bg-white shadow-sm"><h3 class="font-bold border-b pb-2 mb-2 text-indigo-800">${m+1}월</h3><ul class="space-y-1 text-xs text-gray-600">`;
+                mList.forEach(e => html += `<li><span class="font-bold text-gray-400">${e.date.split('-')[2]}일:</span> ${e.title}</li>`);
+                html += (mList.length ? '' : '<li class="text-gray-300 font-light italic">계획 없음</li>') + '</ul></div>';
+            }
+            port.innerHTML = html + '</div>';
+        }
+
+        // 초기화
+        window.onload = render;
+    </script>
+</body>
+</html>
