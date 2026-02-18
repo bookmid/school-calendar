@@ -9,8 +9,6 @@
 .notice-green{background:#d1fae5!important;border-color:#10b981!important;font-weight:700!important;}
 .modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.5);z-index:999;}
 .modal.show{display:flex;align-items:center;justify-content:center;}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-10px);}to{opacity:1;transform:translateY(0);}}
-.fade-in{animation:fadeIn 0.3s ease;}
 </style>
 </head>
 <body class="bg-gray-50 p-4">
@@ -65,25 +63,24 @@
 
 <script>
 var API="https://script.google.com/macros/s/AKfycbzBzEu_8Xo_EOIcFX48-Lj6k5TehW6gF86fX7zkQszp1qzCX3RsXKfeVCUezVzfnaCx/exec";
-var events=[],notices={},currentDate=new Date(),viewMode="week",isAdmin=false,loading=false;
+var events=[],notices={},currentDate=new Date(),viewMode="week",isAdmin=false,loading=false,saving=false;
 var dayNames=["일","월","화","수","목","금","토"];
 
 function setSyncStatus(text,color){
 var el=document.getElementById("sync");
 el.textContent=text;
-if(color)el.style.background=color;
-else el.style.background="#4f46e5";
+el.style.background=color||"#4f46e5";
 }
 
 function load(){
-if(loading)return;
+if(loading||saving)return;
 loading=true;
-setSyncStatus("● 로딩...");
-console.log("📥 로드 시작");
+setSyncStatus("● 로딩...","#f59e0b");
+console.log("📥 로드");
 
 fetch(API+"?action=load&t="+Date.now())
 .then(function(r){
-console.log("📥 응답:",r.status);
+console.log("응답:",r.status);
 if(!r.ok)throw new Error("HTTP "+r.status);
 return r.json();
 })
@@ -96,31 +93,40 @@ render();
 loading=false;
 })
 .catch(function(e){
-console.error("❌ 오류:",e);
+console.error("❌",e);
 setSyncStatus("● 오류","#ef4444");
 loading=false;
 });
 }
 
-function saveToServer(action,data){
-console.log("💾 서버 저장:",action);
+function saveAndReload(action,data){
+if(saving)return Promise.reject();
+saving=true;
 setSyncStatus("● 저장 중...","#f59e0b");
+console.log("💾 저장:",action,data);
 
-fetch(API,{
+return fetch(API,{
 method:"POST",
 body:JSON.stringify(Object.assign({action:action},data))
 })
 .then(function(r){return r.json();})
 .then(function(result){
 console.log("✅ 저장 완료:",result);
+if(!result.success)throw new Error(result.error||"실패");
 setSyncStatus("● 저장됨","#10b981");
+saving=false;
 setTimeout(function(){
+console.log("🔄 서버에서 다시 로드");
 load();
-},1000);
+},2000);
+return result;
 })
 .catch(function(e){
-console.error("❌ 저장 오류:",e);
-setSyncStatus("● 오류","#ef4444");
+console.error("❌ 저장 실패:",e);
+setSyncStatus("● 저장 오류","#ef4444");
+alert("저장 실패: "+e.message);
+saving=false;
+throw e;
 });
 }
 
@@ -153,9 +159,9 @@ if(evs.length==0){
 html+="<div class='text-gray-400 text-sm mt-1'>일정 없음</div>";
 }else{
 evs.forEach(function(e){
-html+="<div class='bg-indigo-50 p-2 rounded mt-1 text-sm border-l-4 border-indigo-600 fade-in'>";
-html+="<span class='font-bold'>"+e.title+"</span>";
-html+=" <span class='text-indigo-600'>("+e.dapt+")</span>";
+html+="<div class='bg-indigo-50 p-2 rounded mt-1 text-sm border-l-4 border-indigo-600 flex justify-between items-center'>";
+html+="<div><span class='font-bold'>"+e.title+"</span> <span class='text-indigo-600'>("+e.dapt+")</span></div>";
+html+="<button onclick='deleteEvent(\""+e.id+"\")' class='text-red-600 font-bold text-lg hover:text-red-800'>✕</button>";
 html+="</div>";
 });
 }
@@ -192,7 +198,7 @@ html+="<div class='border p-2 min-h-24 cursor-pointer hover:bg-gray-50 "+(isWeek
 html+="<div class='text-sm font-bold "+(dayIdx==0?"text-red-600":dayIdx==6?"text-blue-600":"text-gray-700")+"'>"+d+"</div>";
 
 evs.forEach(function(e){
-html+="<div class='text-xs bg-indigo-100 p-1 mt-1 rounded truncate' title='"+e.title+"'>"+e.title.substring(0,5)+"</div>";
+html+="<div class='text-xs bg-indigo-100 p-1 mt-1 rounded truncate'>"+e.title.substring(0,5)+"</div>";
 });
 
 html+="</div>";
@@ -224,10 +230,9 @@ for(var i=0;i<first;i++)html+="<div></div>";
 for(var d=1;d<=last;d++){
 var ds=y+"-"+pad(m+1)+"-"+pad(d);
 var evs=events.filter(function(e){return e.date==ds;});
-var dayIdx=new Date(y,m,d).getDay();
 var hasEvent=evs.length>0;
 
-html+="<div class='text-center p-1 rounded cursor-pointer hover:bg-gray-100 "+(hasEvent?"bg-indigo-100 font-bold text-indigo-900":"")+"' onclick='showDetail(\""+ds+"\")' title='"+evs.map(function(e){return e.title;}).join(", ")+"'>"+d+"</div>";
+html+="<div class='text-center p-1 rounded cursor-pointer hover:bg-gray-100 "+(hasEvent?"bg-indigo-100 font-bold":"")+"' onclick='showDetail(\""+ds+"\")'>"+d+"</div>";
 }
 
 html+="</div></div>";
@@ -259,7 +264,7 @@ var val=wn[r.id]||"";
 html+="<div class='mb-3'>";
 html+="<div class='font-bold text-sm mb-1'>"+r.n+"</div>";
 html+="<div class='flex gap-2'>";
-html+="<input type='text' id='n_"+r.id+"' value='"+val.replace(/'/g,"&apos;")+"' class='flex-1 border p-2 rounded text-sm "+(val?"notice-green":"")+"' placeholder='"+r.n+" 안내사항 입력' onblur='autoSaveNotice(\""+r.id+"\")'>";
+html+="<input type='text' id='n_"+r.id+"' value='"+val.replace(/'/g,"&apos;")+"' class='flex-1 border p-2 rounded text-sm "+(val?"notice-green":"")+"' placeholder='입력 후 다른 곳 클릭' onblur='autoSaveNotice(\""+r.id+"\")'>";
 html+="</div></div>";
 });
 
@@ -276,19 +281,21 @@ var oldVal=(notices[wk]&&notices[wk][r])||"";
 
 if(val==oldVal)return;
 
-console.log("💾 안내사항 자동 저장:",r,val);
-
 if(!notices[wk])notices[wk]={};
 notices[wk][r]=val;
 
 if(val)el.classList.add("notice-green");
 else el.classList.remove("notice-green");
 
-saveToServer("saveNotice",{
-weekKey:wk,
-role:r,
-content:val
-});
+saveAndReload("saveNotice",{weekKey:wk,role:r,content:val});
+}
+
+function deleteEvent(id){
+if(!confirm("삭제하시겠습니까?"))return;
+console.log("🗑️ 삭제:",id);
+events=events.filter(function(e){return e.id!=id;});
+render();
+saveAndReload("deleteEvent",{id:id});
 }
 
 function showDetail(ds){
@@ -324,15 +331,11 @@ document.getElementById("loginModal").classList.add("show");
 };
 
 document.getElementById("btnLogin").onclick=function(){
-var id=document.getElementById("adminId").value;
-var pw=document.getElementById("adminPw").value;
-if(id=="admin"&&pw=="1234"){
+if(document.getElementById("adminId").value=="admin"&&document.getElementById("adminPw").value=="1234"){
 isAdmin=true;
 document.getElementById("adminBadge").style.display="block";
 document.getElementById("loginModal").classList.remove("show");
-}else{
-alert("❌ 비밀번호가 틀렸습니다.");
-}
+}else alert("비밀번호 오류");
 };
 
 document.getElementById("btnWeek").onclick=function(){viewMode="week";render();};
@@ -340,24 +343,16 @@ document.getElementById("btnMonth").onclick=function(){viewMode="month";render()
 document.getElementById("btnYear").onclick=function(){viewMode="year";render();};
 
 document.getElementById("btnPrev").onclick=function(){
-if(viewMode=="year"){
-currentDate.setFullYear(currentDate.getFullYear()-1);
-}else if(viewMode=="month"){
-currentDate.setMonth(currentDate.getMonth()-1);
-}else{
-currentDate.setDate(currentDate.getDate()-7);
-}
+if(viewMode=="year")currentDate.setFullYear(currentDate.getFullYear()-1);
+else if(viewMode=="month")currentDate.setMonth(currentDate.getMonth()-1);
+else currentDate.setDate(currentDate.getDate()-7);
 render();
 };
 
 document.getElementById("btnNext").onclick=function(){
-if(viewMode=="year"){
-currentDate.setFullYear(currentDate.getFullYear()+1);
-}else if(viewMode=="month"){
-currentDate.setMonth(currentDate.getMonth()+1);
-}else{
-currentDate.setDate(currentDate.getDate()+7);
-}
+if(viewMode=="year")currentDate.setFullYear(currentDate.getFullYear()+1);
+else if(viewMode=="month")currentDate.setMonth(currentDate.getMonth()+1);
+else currentDate.setDate(currentDate.getDate()+7);
 render();
 };
 
@@ -366,19 +361,10 @@ var d=document.getElementById("inDate").value;
 var t=document.getElementById("inTitle").value;
 var dept=document.getElementById("inDept").value;
 
-if(!d||!t){
-alert("❌ 날짜와 내용을 입력하세요.");
-return;
-}
+if(!d||!t){alert("날짜와 내용 입력 필요");return;}
 
-var newEvent={
-id:Date.now().toString(),
-date:d,
-title:t,
-dapt:dept
-};
-
-console.log("💾 일정 추가 (즉시 반영):",newEvent);
+var newEvent={id:Date.now().toString(),date:d,title:t,dapt:dept};
+console.log("💾 일정 추가:",newEvent);
 
 events.push(newEvent);
 render();
@@ -386,17 +372,16 @@ render();
 document.getElementById("inDate").value="";
 document.getElementById("inTitle").value="";
 
-saveToServer("addEvent",newEvent);
+saveAndReload("addEvent",newEvent);
 };
 
 document.getElementById("closeDetail").onclick=function(){
 document.getElementById("detailModal").classList.remove("show");
 };
 
-console.log("🚀 구례중 학사력 시스템");
-console.log("📍 API:",API);
+console.log("🚀 시스템 시작");
 load();
-setInterval(function(){if(!loading)load();},30000);
+setInterval(function(){if(!loading&&!saving)load();},30000);
 </script>
 </body>
 </html>
