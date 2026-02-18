@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; text-align: center; }
+        body { font-family: 'Pretendard', sans-serif; text-align: center; margin: 0; padding: 0; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: left; }
         .day-cell { min-height: 100px; border: 1px solid #e5e7eb; }
         input, select, button { text-align: center; }
@@ -48,13 +48,13 @@
                 </select>
                 <button onclick="addEvent()" class="w-full md:w-32 bg-blue-600 text-white p-2 rounded hover:bg-blue-700 font-bold text-sm transition">일정 저장</button>
             </div>
-            <p class="text-[10px] text-gray-400 mt-2">* 부서는 선택 시 유지됩니다.</p>
+            <p class="text-[10px] text-gray-400 mt-2">* 부서는 한 번 선택하면 다른 일정 입력 시에도 유지됩니다.</p>
         </section>
 
         <div class="flex items-center justify-center gap-4 mb-4 bg-white py-3 rounded-lg shadow-sm border">
-            <button onclick="moveTime(-1)" class="text-xl font-bold text-blue-600">◀</button>
-            <div id="viewTitle" class="text-base md:text-xl font-bold text-gray-800 text-center min-w-[250px]"></div>
-            <button onclick="moveTime(1)" class="text-xl font-bold text-blue-600">▶</button>
+            <button onclick="moveTime(-1)" class="text-xl font-bold text-blue-600 px-4">◀</button>
+            <div id="viewTitle" class="text-base md:text-xl font-bold text-gray-800 text-center min-w-[200px]">로딩 중...</div>
+            <button onclick="moveTime(1)" class="text-xl font-bold text-blue-600 px-4">▶</button>
         </div>
 
         <div id="contentDisplay" class="bg-white p-2 md:p-4 rounded-xl shadow-md min-h-[400px]">
@@ -63,36 +63,47 @@
     </main>
 
     <script>
-        let events = JSON.parse(localStorage.getItem('gureMS_Events')) || [];
+        // 데이터 불러오기
+        let events = [];
+        try {
+            events = JSON.parse(localStorage.getItem('gureMS_Events')) || [];
+        } catch (e) {
+            events = [];
+        }
+
         let currentView = 'monthly';
         let viewDate = new Date();
 
-        function saveEvents() {
+        // 1. 일정 추가
+        function addEvent() {
+            const date = document.getElementById('eventDate').value;
+            const title = document.getElementById('eventTitle').value;
+            const dept = document.getElementById('eventDept').value;
+
+            if(!date || !title || !dept) {
+                alert("날짜, 내용, 부서를 모두 확인해주세요!");
+                return;
+            }
+
+            events.push({ id: Date.now(), date, title, dept });
             localStorage.setItem('gureMS_Events', JSON.stringify(events));
+            
+            // 내용만 비우고 부서는 유지
+            document.getElementById('eventTitle').value = '';
+            document.getElementById('eventTitle').focus();
             render();
         }
 
-        function addEvent() {
-            const date = document.getElementById('eventDate').value;
-            const dept = document.getElementById('eventDept').value;
-            const title = document.getElementById('eventTitle').value;
-
-            if(!date || !title || !dept) return alert("날짜, 내용, 부서를 모두 확인해주세요!");
-
-            events.push({ id: Date.now(), date, dept, title });
-            saveEvents();
-            
-            document.getElementById('eventTitle').value = '';
-            document.getElementById('eventTitle').focus();
-        }
-
+        // 2. 일정 삭제
         function deleteEvent(id) {
-            if(confirm("이 일정을 삭제하시겠습니까?")) {
+            if(confirm("정말 삭제하시겠습니까?")) {
                 events = events.filter(e => e.id !== id);
-                saveEvents();
+                localStorage.setItem('gureMS_Events', JSON.stringify(events));
+                render();
             }
         }
 
+        // 3. 시간 이동 로직
         function moveTime(offset) {
             if (currentView === 'yearly') {
                 viewDate.setFullYear(viewDate.getFullYear() + offset);
@@ -109,16 +120,17 @@
             render();
         }
 
-        // 주간 범위 계산 안전 로직
+        // 4. 주간 범위 계산 (안전한 버전)
         function getWeekRange(date) {
             let d = new Date(date);
             let day = d.getDay();
-            let diff = d.getDate() - day + (day === 0 ? -6 : 1); // 월요일 찾기
+            // 월요일로 맞추기 (일요일인 경우 특별 처리)
+            let diff = d.getDate() - day + (day === 0 ? -6 : 1);
             
             let monday = new Date(d.setDate(diff));
             let friday = new Date(new Date(monday).setDate(monday.getDate() + 4));
 
-            const fmt = (target) => `${target.getMonth() + 1}.${target.getDate()}.(${['일','월','화','수','목','금','토'][target.getDay()]})`;
+            const fmt = (t) => `${t.getMonth() + 1}.${t.getDate()}.(${['일','월','화','수','목','금','토'][t.getDay()]})`;
             
             return {
                 text: `${fmt(monday)} - ${fmt(friday)}`,
@@ -127,5 +139,44 @@
             };
         }
 
+        // 5. 핵심 렌더링 함수
         function render() {
-            const container = document.getElementById('
+            const target = document.getElementById('renderTarget');
+            const title = document.getElementById('viewTitle');
+            if(!target) return;
+            target.innerHTML = '';
+
+            if (currentView === 'yearly') {
+                title.innerText = `${viewDate.getFullYear()}학년도 학사력`;
+                renderYearly(target);
+            } else if (currentView === 'monthly') {
+                title.innerText = `${viewDate.getFullYear()}년 ${viewDate.getMonth() + 1}월 계획`;
+                renderMonthly(target);
+            } else if (currentView === 'weekly') {
+                const range = getWeekRange(viewDate);
+                title.innerText = `주간계획 (${range.text})`;
+                renderWeekly(target, range.start, range.end);
+            }
+        }
+
+        function renderMonthly(target) {
+            let html = `<div class="calendar-grid bg-gray-200 gap-px border">`;
+            const days = ['일','월','화','수','목','금','토'];
+            days.forEach((d, i) => {
+                const color = i === 0 ? 'text-red-500' : (i === 6 ? 'text-blue-500' : '');
+                html += `<div class="bg-gray-100 p-2 text-center font-bold text-xs ${color}">${d}</div>`;
+            });
+
+            const firstDay = new Date(viewDate.getFullYear(), viewDate.getMonth(), 1).getDay();
+            const lastDate = new Date(viewDate.getFullYear(), viewDate.getMonth() + 1, 0).getDate();
+
+            for(let i=0; i<firstDay; i++) html += `<div class="day-cell bg-gray-50"></div>`;
+            for(let d=1; d<=lastDate; d++) {
+                const dateStr = `${viewDate.getFullYear()}-${String(viewDate.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+                const dayEvents = events.filter(e => e.date === dateStr);
+                html += `
+                    <div class="day-cell bg-white p-1 overflow-y-auto text-left">
+                        <div class="font-bold text-xs mb-1">${d}</div>
+                        ${dayEvents.map(e => `
+                            <div class="text-[9px] bg-blue-50 mb-0.5 p-0.5 rounded border-l-2 border-blue-400 truncate">
+                                <span class="text-blue-700 font-bold md:inline hidden">[${e.dept
