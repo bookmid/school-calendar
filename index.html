@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례중학교 학사력</title>
+    <title>구례중학교 실시간 학사력</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; display: flex; flex-direction: column; min-height: 100vh; }
+        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; min-height: 100vh; display: flex; flex-direction: column; }
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border-radius: 12px; overflow: hidden; }
-        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; transition: 0.2s; }
+        .day-cell { min-height: 110px; background-color: white; padding: 8px; cursor: pointer; }
         .bg-holiday { background-color: #fff1f2 !important; }
-        .event-badge { font-size: 11px; padding: 3px 6px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 3px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .event-badge { font-size: 11px; padding: 2px 4px; margin-top: 2px; border-radius: 4px; background-color: #eef2ff; border-left: 3px solid #4f46e5; color: #3730a3; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
         .year-wrapper { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
         .mini-month { background: white; padding: 15px; border-radius: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
         footer { margin-top: auto; padding: 20px; text-align: center; color: #64748b; font-size: 0.9rem; border-top: 1px solid #e2e8f0; }
@@ -31,16 +31,20 @@
 
     <main class="container mx-auto p-4 max-w-6xl">
         <section class="bg-white p-6 rounded-3xl shadow-sm mb-6 border border-gray-100 mt-4 flex flex-wrap gap-3 items-end justify-center">
-            <div class="flex-1 min-w-[150px]"><label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
+            <div class="flex-1 min-w-[120px]"><label class="text-[10px] font-bold text-gray-400 ml-1">날짜</label>
                 <input type="date" id="dateIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
             <div class="flex-[2] min-w-[200px]"><label class="text-[10px] font-bold text-gray-400 ml-1">행사 내용</label>
-                <input type="text" id="titleIn" placeholder="내용을 입력하세요" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+                <input type="text" id="titleIn" placeholder="내용 입력" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400"></div>
+            <div class="flex-1 min-w-[120px]"><label class="text-[10px] font-bold text-gray-400 ml-1">관련 부서</label>
+                <select id="deptIn" class="w-full border p-2 rounded-xl outline-none focus:ring-2 focus:ring-indigo-400 bg-white">
+                    <option value="교무부">교무부</option><option value="학생부">학생부</option><option value="연구부">연구부</option><option value="행정실">행정실</option>
+                </select></div>
             <button onclick="handleAdd()" class="bg-indigo-600 text-white px-6 py-2.5 rounded-xl font-bold hover:bg-indigo-700 transition shadow-md active:scale-95">일정 저장</button>
         </section>
 
         <div class="flex justify-center items-center gap-10 mb-6">
             <button onclick="shiftTime(-1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❮</button>
-            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px] text-center text-center">불러오는 중...</h2>
+            <h2 id="mainTitle" class="text-2xl font-black text-gray-800 min-w-[200px] text-center">동기화 중...</h2>
             <button onclick="shiftTime(1)" class="text-indigo-300 hover:text-indigo-600 text-3xl font-bold">❯</button>
         </div>
 
@@ -53,8 +57,8 @@
     </footer>
 
     <script>
-        // 선생님의 API 주소 유지
-        const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvklrg_REKRoR/exec';
+        // 중요: 이미지 76d7e6의 주소를 참고하되, 새로 배포하셨다면 새 주소를 넣으세요.
+        const API_URL = 'https://script.google.com/macros/s/AKfycbwt-3h-U7jrEcOOsmkt5yJVLJPmSQm2X7czP_56DS4xoKeG4e3gYhkxvkIrg_REkKSK/exec';
         let events = [];
         let curDate = new Date();
         let curView = 'monthly';
@@ -64,9 +68,14 @@
         async function fetchEvents() {
             try {
                 const res = await fetch(API_URL);
-                events = await res.json();
+                const data = await res.json();
+                // 2. 데이터 필드 매칭: 시트의 'data' 헤더를 'date'로 통일하여 처리
+                events = data.map(e => ({ ...e, date: e.data || e.date }));
                 render();
-            } catch(e) { document.getElementById('mainTitle').innerText = "데이터 연결 실패!"; }
+            } catch(e) { 
+                console.error(e);
+                document.getElementById('mainTitle').innerText = "연결 오류(URL 확인)"; 
+            }
         }
 
         function setView(v) { curView = v; render(); }
@@ -100,8 +109,7 @@
                     const isHoliday = holidays.includes(ds) || new Date(y, m, d).getDay() === 0 || new Date(y, m, d).getDay() === 6 || manualReds.has(ds);
                     html += `<div class="day-cell ${isHoliday ? 'bg-holiday' : ''}" onclick="toggleColor('${ds}')">
                         <div class="text-xs font-bold ${isHoliday ? 'text-red-500' : 'text-gray-400'}">${d}</div>`;
-                    // 시트의 'data' 헤더와 매칭
-                    events.filter(e => e.data === ds).forEach(e => html += `<div class="event-badge">${e.title}</div>`);
+                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge">【${e.dapt || '공통'}】 ${e.title}</div>`);
                     html += `</div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -111,8 +119,8 @@
                 let html = '<div class="year-wrapper">';
                 for(let i=0; i<12; i++) {
                     html += `<div class="mini-month"><div class="font-bold text-indigo-600 border-b pb-1 mb-2 text-sm">${i+1}월</div><div class="space-y-1">`;
-                    const mEvents = events.filter(e => new Date(e.data).getMonth() === i && new Date(e.data).getFullYear() === y);
-                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.data)-new Date(b.data)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${e.data.split('-')[2]}일</strong>: ${e.title}</div>`);
+                    const mEvents = events.filter(e => new Date(e.date).getMonth() === i && new Date(e.date).getFullYear() === y);
+                    if(mEvents.length) mEvents.sort((a,b)=>new Date(a.date)-new Date(b.date)).forEach(e => html += `<div class="text-[10px] bg-indigo-50 p-1 rounded"><strong>${e.date.split('-')[2]}일</strong> ${e.title}</div>`);
                     else html += `<div class="text-[10px] text-gray-300 italic">일정 없음</div>`;
                     html += '</div></div>';
                 }
@@ -128,7 +136,7 @@
                     html += `<div class="bg-white rounded-xl shadow-sm p-4 mb-3 flex border-l-4 border-indigo-500"><div class="w-16 text-center border-r pr-4 mr-4">
                         <div class="text-xl font-bold ${i===0?'text-red-500':i===6?'text-blue-500':''}">${d.getDate()}</div><div class="text-xs text-gray-400">${['일','월','화','수','목','금','토'][i]}</div></div>
                         <div class="flex-1">`;
-                    events.filter(e => e.data === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">${e.title}</div>`);
+                    events.filter(e => e.date === ds).forEach(e => html += `<div class="event-badge text-sm p-1.5">【${e.dapt || '부서'}】 ${e.title}</div>`);
                     html += `</div></div>`;
                 }
                 port.innerHTML = html + '</div>';
@@ -138,12 +146,22 @@
         async function handleAdd() {
             const date = document.getElementById('dateIn').value;
             const title = document.getElementById('titleIn').value;
-            if(!date || !title) return alert("날짜와 내용을 입력하세요!");
-            document.getElementById('mainTitle').innerText = "저장 중...";
-            // 시트의 'data'와 'dapt' 열 이름에 맞춰 데이터 전송
-            await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: 'add', id: Date.now().toString(), data: date, title: title, dapt: '교무부' }) });
-            document.getElementById('titleIn').value = '';
-            fetchEvents();
+            const dept = document.getElementById('deptIn').value;
+            if(!date || !title) return alert("내용을 입력하세요!");
+            
+            document.getElementById('mainTitle').innerText = "전송 중...";
+            
+            // 시트의 헤더 'data', 'title', 'dapt'와 정확히 매칭
+            const payload = { action: 'add', id: Date.now().toString(), data: date, title: title, dapt: dept };
+            
+            try {
+                await fetch(API_URL, { method: 'POST', body: JSON.stringify(payload) });
+                document.getElementById('titleIn').value = '';
+                await fetchEvents();
+            } catch (e) {
+                alert("저장 실패! GAS URL이나 권한 설정을 확인하세요.");
+                fetchEvents();
+            }
         }
         window.onload = fetchEvents;
     </script>
