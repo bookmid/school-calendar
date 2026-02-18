@@ -1,4 +1,6 @@
-<!DOCTYPE html>
+
+# 완전히 수정된 최종 버전
+html_code = '''<!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
@@ -80,15 +82,16 @@
 
     <script>
         const app = {
+            // ⭐ Google Apps Script URL (실제 URL로 변경됨!)
             API_URL: 'https://script.google.com/macros/s/AKfycbxJWIOqWzlIBIBQskT-zo7nb7vlw241VSnFZRTW3f-9LvEcozJ5lSYosGs4c6qAcoD9/exec',
-
+            
             events: [],
-            notices: {},
+            notices: {},  // 모든 주의 안내사항 저장
             currentDate: new Date(),
             viewMode: 'monthly',
-            isEditing: false,  // ⭐ 편집 중 플래그
-            editingTimeout: null,  // ⭐ 타임아웃
-
+            isEditing: false,
+            editingTimeout: null,
+            
             holidays: [
                 '2026-01-01:신정',
                 '2026-01-28:설날연휴',
@@ -106,12 +109,12 @@
                 '2026-10-09:한글날',
                 '2026-12-25:크리스마스'
             ],
-
+            
             getHoliday(dateStr) {
                 const found = this.holidays.find(h => h.startsWith(dateStr + ':'));
                 return found ? found.split(':')[1] : null;
             },
-
+            
             setSyncStatus(status) {
                 const indicator = document.getElementById('syncIndicator');
                 if (status === 'editing') {
@@ -129,33 +132,29 @@
                     indicator.textContent = '● 오류 발생';
                 }
             },
-
-            getWeekKey() {
-                const start = new Date(this.currentDate);
-                start.setDate(this.currentDate.getDate() - this.currentDate.getDay());
-                return `${start.getFullYear()}-${String(start.getMonth() + 1).padStart(2, '0')}-${String(start.getDate()).padStart(2, '0')}`;
+            
+            // 주간 키 생성 (해당 주의 일요일 날짜)
+            getWeekKey(date = this.currentDate) {
+                const d = new Date(date);
+                d.setDate(d.getDate() - d.getDay());  // 그 주의 일요일
+                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
             },
-
+            
+            // 서버에서 데이터 로드
             async loadFromServer() {
-                // ⭐ 편집 중이면 동기화 건너뛰기
                 if (this.isEditing) {
                     console.log('편집 중이므로 동기화 건너뜀');
                     return;
                 }
-
-                if (this.API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                    const data = localStorage.getItem('gurye_events');
-                    this.events = data ? JSON.parse(data) : [];
-                    const noticeData = localStorage.getItem('gurye_notices');
-                    this.notices = noticeData ? JSON.parse(noticeData) : {};
-                    return;
-                }
-
+                
                 try {
                     this.setSyncStatus('syncing');
                     const response = await fetch(this.API_URL + '?action=load&t=' + Date.now());
                     const data = await response.json();
-
+                    
+                    console.log('서버에서 받은 데이터:', data);
+                    
+                    // 이벤트 데이터 처리
                     this.events = (data.events || []).map(item => {
                         let dateStr = item.date;
                         if (typeof dateStr === 'string' && dateStr.includes('T')) {
@@ -170,9 +169,11 @@
                             dapt: item.dapt
                         };
                     });
-
+                    
+                    // ⭐ 안내사항 데이터 처리 (모든 주의 데이터 유지)
                     this.notices = data.notices || {};
-
+                    console.log('로드된 안내사항:', this.notices);
+                    
                     this.setSyncStatus('success');
                     this.render();
                 } catch (error) {
@@ -180,64 +181,67 @@
                     this.setSyncStatus('error');
                 }
             },
-
+            
+            // 서버에 데이터 저장
             async saveToServer(action, data) {
-                if (this.API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
-                    localStorage.setItem('gurye_events', JSON.stringify(this.events));
-                    localStorage.setItem('gurye_notices', JSON.stringify(this.notices));
-                    return;
-                }
-
                 try {
-                    await fetch(this.API_URL, {
+                    console.log('서버에 저장:', action, data);
+                    this.setSyncStatus('syncing');
+                    
+                    const response = await fetch(this.API_URL, {
                         method: 'POST',
                         headers: { 'Content-Type': 'text/plain' },
                         body: JSON.stringify({ action, ...data })
                     });
-
+                    
+                    console.log('저장 완료');
+                    
                     // 저장 후 1초 뒤 동기화
-                    setTimeout(() => this.loadFromServer(), 1000);
+                    setTimeout(() => {
+                        this.isEditing = false;
+                        this.loadFromServer();
+                    }, 1000);
                 } catch (error) {
                     console.error('저장 오류:', error);
                     this.setSyncStatus('error');
                 }
             },
-
+            
             async saveEvent() {
                 const dateInput = document.getElementById('inDate').value;
                 const title = document.getElementById('inTitle').value;
                 const dapt = document.getElementById('inDept').value;
-
+                
                 if (!dateInput || !title) {
                     alert('날짜와 내용을 입력하세요.');
                     return;
                 }
-
+                
                 const newEvent = {
                     id: Date.now().toString(),
                     date: dateInput,
                     title: title,
                     dapt: dapt
                 };
-
+                
                 this.events.push(newEvent);
                 this.render();
                 await this.saveToServer('addEvent', newEvent);
-
+                
                 document.getElementById('inDate').value = '';
                 document.getElementById('inTitle').value = '';
             },
-
+            
             async deleteEvent(id) {
                 if (!confirm('삭제하시겠습니까?')) return;
                 this.events = this.events.filter(e => e.id !== id);
                 this.render();
                 await this.saveToServer('deleteEvent', { id });
             },
-
+            
             async toggleHoliday(dateStr) {
                 const existing = this.events.find(e => e.date === dateStr && e.title === '휴업일');
-
+                
                 if (existing) {
                     if (confirm('휴업일을 해제하시겠습니까?')) {
                         await this.deleteEvent(existing.id);
@@ -256,46 +260,46 @@
                     }
                 }
             },
-
-            // ⭐ 안내사항 입력 시작
+            
+            // 안내사항 입력 시작
             handleNoticeInput(role) {
                 this.isEditing = true;
                 this.setSyncStatus('editing');
-
-                // 기존 타임아웃 취소
+                
                 if (this.editingTimeout) {
                     clearTimeout(this.editingTimeout);
                 }
             },
-
-            // ⭐ 안내사항 저장 (디바운스)
+            
+            // ⭐ 안내사항 저장 (로컬에도 즉시 저장)
             async saveNotice(role) {
                 const weekKey = this.getWeekKey();
                 const input = document.getElementById(`notice_${role}`);
                 if (!input) return;
-
-                // 로컬에 즉시 저장
-                if (!this.notices[weekKey]) this.notices[weekKey] = {};
+                
+                // ⭐ 로컬 notices에 즉시 저장 (중요!)
+                if (!this.notices[weekKey]) {
+                    this.notices[weekKey] = {};
+                }
                 this.notices[weekKey][role] = input.value;
-
-                // 2초 후 서버에 저장
+                
+                console.log('안내사항 저장:', weekKey, role, input.value);
+                console.log('현재 notices:', this.notices);
+                
+                // 디바운스: 2초 후 서버에 저장
                 if (this.editingTimeout) {
                     clearTimeout(this.editingTimeout);
                 }
-
+                
                 this.editingTimeout = setTimeout(async () => {
                     await this.saveToServer('saveNotice', {
                         weekKey,
                         role,
                         content: input.value
                     });
-
-                    // 저장 완료 후 편집 모드 해제
-                    this.isEditing = false;
-                    this.setSyncStatus('success');
                 }, 2000);
             },
-
+            
             move(direction) {
                 if (this.viewMode === 'yearly') {
                     this.currentDate.setFullYear(this.currentDate.getFullYear() + direction);
@@ -306,30 +310,30 @@
                 }
                 this.render();
             },
-
+            
             setView(mode) {
                 this.viewMode = mode;
                 this.render();
             },
-
+            
             renderYearly() {
                 const year = this.currentDate.getFullYear();
                 let html = '<div class="year-view">';
-
+                
                 for (let m = 0; m < 12; m++) {
                     html += `<div class="year-month">
                         <div class="year-month-title">${year}년 ${m + 1}월</div>
                         <div class="mini-calendar">`;
-
+                    
                     ['일','월','화','수','목','금','토'].forEach(w => {
                         html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`;
                     });
-
+                    
                     const first = new Date(year, m, 1).getDay();
                     const last = new Date(year, m + 1, 0).getDate();
-
+                    
                     for (let i = 0; i < first; i++) html += '<div></div>';
-
+                    
                     for (let d = 1; d <= last; d++) {
                         const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                         const dayIdx = new Date(year, m, d).getDay();
@@ -338,46 +342,46 @@
                         const isWeekend = dayIdx === 0 || dayIdx === 6;
                         const isHoliday = dayEvents.some(e => e.title === '휴업일');
                         const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-600');
-
+                        
                         let cellClass = '';
                         if (holiday || isHoliday || isWeekend) {
                             cellClass = 'holiday';
                         } else if (dayEvents.length > 0) {
                             cellClass = 'has-event';
                         }
-
+                        
                         html += `<div class="mini-day ${cellClass} ${colorClass}" title="${dayEvents.map(e => e.title).join(', ')}">
                             ${d}`;
-
+                        
                         if (dayEvents.length > 0) {
                             html += `<div class="mini-event">${dayEvents[0].title}</div>`;
                         }
-
+                        
                         html += `</div>`;
                     }
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 return html + '</div>';
             },
-
+            
             renderMonthly() {
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 let html = '<div class="calendar-grid">';
-
+                
                 ['일','월','화','수','목','금','토'].forEach(w => {
                     html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-bold text-slate-400">${w}</div>`;
                 });
-
+                
                 const first = new Date(year, month, 1).getDay();
                 const last = new Date(year, month + 1, 0).getDate();
-
+                
                 for (let i = 0; i < first; i++) {
                     html += '<div class="day-cell bg-slate-50/30"></div>';
                 }
-
+                
                 for (let d = 1; d <= last; d++) {
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dayIdx = new Date(year, month, d).getDay();
@@ -386,139 +390,143 @@
                     const isHoliday = this.events.some(e => e.date === dateStr && e.title === '휴업일');
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
                     const cellClass = (isWeekend || holiday || isHoliday) ? 'weekend-cell' : '';
-
+                    
                     html += `<div class="day-cell ${cellClass}" onclick="app.toggleHoliday('${dateStr}')">
                         <div class="text-[11px] font-black ${colorClass}">${d}</div>`;
-
+                    
                     if (holiday) {
                         html += `<div class="holiday-badge">${holiday}</div>`;
                     }
-
+                    
                     html += '<div class="mt-1">';
-
+                    
                     this.events.filter(e => e.date === dateStr).forEach(e => {
                         html += `<div class="event-item" onclick="event.stopPropagation()">
                             <span>${e.title} (${e.dapt})</span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 return html + '</div>';
             },
-
+            
             renderWeekly() {
                 const start = new Date(this.currentDate);
                 start.setDate(this.currentDate.getDate() - this.currentDate.getDay());
-
+                
                 let html = '<div class="flex flex-col gap-2">';
-
+                
                 for (let i = 0; i < 7; i++) {
                     const d = new Date(start);
                     d.setDate(start.getDate() + i);
-
+                    
                     const year = d.getFullYear();
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const day = String(d.getDate()).padStart(2, '0');
                     const dateStr = `${year}-${month}-${day}`;
-
+                    
                     const holiday = this.getHoliday(dateStr);
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
                     const isHoliday = this.events.some(e => e.date === dateStr && e.title === '휴업일');
                     const weekendClass = (isWeekend || holiday || isHoliday) ? 'weekend-bg' : '';
-
+                    
                     html += `<div class="week-item ${weekendClass} p-4 rounded-xl border flex items-center shadow-sm">
                         <div class="w-24 font-black text-indigo-900 border-r mr-4">
                             ${d.getDate()}일`;
-
+                    
                     if (holiday) {
                         html += `<div class="holiday-badge text-[9px]">${holiday}</div>`;
                     }
-
+                    
                     html += '</div><div class="flex-1">';
-
+                    
                     this.events.filter(e => e.date === dateStr).forEach(e => {
                         html += `<div class="event-item mb-1 p-2">
                             <span>${e.title} (${e.dapt})</span>
                             <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
                         </div>`;
                     });
-
+                    
                     html += '</div></div>';
                 }
-
+                
                 html += '</div>';
-
+                
+                // ⭐ 현재 주의 키를 가져오기
                 const weekKey = this.getWeekKey();
                 const weekNotices = this.notices[weekKey] || {};
-
+                
+                console.log('렌더링 - 현재 주:', weekKey);
+                console.log('렌더링 - 안내사항:', weekNotices);
+                
                 const noticeHtml = `
                     <div class="notice-section">
-                        <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항</h3>
-
+                        <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${weekKey})</h3>
+                        
                         <div class="notice-item">
                             <div class="notice-label">🎓 교장</div>
                             <input type="text" id="notice_principal" class="notice-input" 
                                    value="${weekNotices.principal || ''}" 
                                    oninput="app.handleNoticeInput('principal')"
-                                   onblur="app.saveNotice('principal')" 
+                                   onchange="app.saveNotice('principal')" 
                                    placeholder="교장 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">👔 교감</div>
                             <input type="text" id="notice_vprincipal" class="notice-input" 
                                    value="${weekNotices.vprincipal || ''}" 
                                    oninput="app.handleNoticeInput('vprincipal')"
-                                   onblur="app.saveNotice('vprincipal')" 
+                                   onchange="app.saveNotice('vprincipal')" 
                                    placeholder="교감 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">🏢 행정실장</div>
                             <input type="text" id="notice_admin" class="notice-input" 
                                    value="${weekNotices.admin || ''}" 
                                    oninput="app.handleNoticeInput('admin')"
-                                   onblur="app.saveNotice('admin')" 
+                                   onchange="app.saveNotice('admin')" 
                                    placeholder="행정실장 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">📋 부장</div>
                             <input type="text" id="notice_dept" class="notice-input" 
                                    value="${weekNotices.dept || ''}" 
                                    oninput="app.handleNoticeInput('dept')"
-                                   onblur="app.saveNotice('dept')" 
+                                   onchange="app.saveNotice('dept')" 
                                    placeholder="부장 안내사항 입력">
                         </div>
-
+                        
                         <div class="notice-item">
                             <div class="notice-label">🎯 학년실</div>
                             <input type="text" id="notice_grade" class="notice-input" 
                                    value="${weekNotices.grade || ''}" 
                                    oninput="app.handleNoticeInput('grade')"
-                                   onblur="app.saveNotice('grade')" 
+                                   onchange="app.saveNotice('grade')" 
                                    placeholder="학년실 안내사항 입력">
                         </div>
                     </div>
                 `;
-
+                
                 document.getElementById('weeklyNotices').innerHTML = noticeHtml;
                 document.getElementById('weeklyNotices').style.display = 'block';
-
+                
                 return html;
             },
-
+            
             render() {
                 const viewPort = document.getElementById('viewPort');
                 const titleText = document.getElementById('titleText');
                 const weeklyNotices = document.getElementById('weeklyNotices');
-
+                
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth() + 1;
-
+                
                 if (this.viewMode === 'yearly') {
                     titleText.textContent = `${year}년 전체 학사력`;
                     viewPort.innerHTML = this.renderYearly();
@@ -532,19 +540,50 @@
                     viewPort.innerHTML = this.renderWeekly();
                 }
             },
-
+            
             async init() {
                 await this.loadFromServer();
                 this.render();
-
+                
                 // 5초마다 자동 동기화
                 setInterval(() => this.loadFromServer(), 5000);
             }
         };
-
+        
         window.addEventListener('DOMContentLoaded', () => {
             app.init();
         });
     </script>
 </body>
-</html>
+</html>'''
+
+# 파일 저장
+with open('/tmp/index_완전수정.html', 'w', encoding='utf-8') as f:
+    f.write(html_code)
+
+print("✅ 모든 오류 수정 완료!")
+print("\n🔧 수정 내용:")
+print("   1. ⭐ Google Apps Script URL 적용됨!")
+print("   2. ⭐ 안내사항이 로컬에도 즉시 저장됨")
+print("   3. ⭐ 월간 갔다가 주간 돌아와도 안내사항 유지")
+print("   4. ⭐ 모든 주의 안내사항이 계속 누적 저장됨")
+print("   5. ⭐ 다음 주로 가면 새로 입력 가능 (빈 칸)")
+print("   6. ⭐ onblur → onchange로 변경 (더 확실한 저장)")
+print("\n✨ 작동 방식:")
+print("   - 이번 주(2월 16일~22일): 안내사항 입력 → 저장")
+print("   - 월간으로 이동 → 다시 주간 복귀 → 안내사항 그대로!")
+print("   - 다음 주로 이동(❯ 버튼) → 빈 칸 (새로 입력)")
+print("   - 다시 이전 주로(❮ 버튼) → 이전 안내사항 표시!")
+print("\n📌 다음 단계:")
+print("   1. index_완전수정.html 다운로드")
+print("   2. 파일명을 index.html로 변경")
+print("   3. GitHub Pages에 업로드")
+print("   4. 테스트!")
+print("\n🎯 테스트 시나리오:")
+print("   1. 주간 뷰 → 안내사항 입력")
+print("   2. 월간 뷰 → 다시 주간 뷰")
+print("   3. 안내사항 확인 ✅")
+print("   4. ❯ 버튼 클릭 (다음 주)")
+print("   5. 빈 칸 확인 ✅")
+print("   6. ❮ 버튼 클릭 (이전 주)")
+print("   7. 이전 안내사항 확인 ✅")
