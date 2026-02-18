@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 <head>
@@ -8,71 +7,63 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
-        body { font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
-        .day-cell { min-height: 110px; background-color: white; padding: 6px; position: relative; cursor: pointer; overflow: hidden; }
-        .day-cell:hover { background-color: #f8fafc; }
-        .day-cell.weekend-cell { background-color: #fef2f2; }
-        .day-cell.admin-mode { cursor: crosshair; }
-        .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #94a3b8; color: #1e293b; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }
-        .event-item:hover { background-color: #e2e8f0; }
-        .event-title { flex: 1; overflow: hidden; text-overflow: ellipsis; }
-        .dept-badge { font-weight: 900; margin-left: 4px; white-space: nowrap; }
-        .dept-교무 { color: #3b82f6; }
-        .dept-연구 { color: #8b5cf6; }
-        .dept-학생 { color: #10b981; }
-        .dept-창의 { color: #f59e0b; }
-        .dept-행정 { color: #14b8a6; }
-        .holiday-badge { font-size: 10px; color: #dc2626; font-weight: 700; margin-top: 2px; }
-        .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
-        .del-x { color: #ef4444; cursor: pointer; margin-left: 4px; font-weight: bold; opacity: 0.7; }
-        .del-x:hover { opacity: 1; }
-        .year-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
-        .year-month { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; }
-        .mini-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: 10px; }
-        .mini-day { padding: 4px; text-align: center; min-height: 30px; background: #f8fafc; border-radius: 4px; position: relative; }
-        .mini-day.has-event { background: #dbeafe; font-weight: 700; }
-        .mini-day.weekend { background: #fee2e2; }
-        .mini-day.holiday { background: #fef2f2; }
-        .mini-event { font-size: 7px; color: #4f46e5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-        .week-item { background-color: white; }
-        .week-item.weekend-bg { background-color: #fef2f2 !important; }
-        .week-day-label { font-size: 10px; color: #64748b; margin-left: 4px; }
-        .sync-indicator { position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; }
-        .sync-indicator.syncing { background: #f59e0b; animation: pulse 1s infinite; }
-        .sync-indicator.editing { background: #10b981; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-        .notice-section { background: white; padding: 16px; border-radius: 12px; margin-top: 16px; border: 2px solid #e2e8f0; }
-        .notice-item { margin-bottom: 12px; }
-        .notice-label { font-weight: 900; color: #4f46e5; font-size: 12px; margin-bottom: 4px; }
-        .notice-input-group { display: flex; gap: 8px; align-items: center; }
-        .notice-input { flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }
-        .notice-input:focus { border-color: #6366f1; background-color: #f0f9ff; }
-        .notice-input.has-content { background-color: #e8f5e9; border-color: #66bb6a; font-weight: 700; color: #1b5e20; }
-        .notice-input.unsaved { border-color: #f59e0b; background-color: #fffbeb; }
-        .notice-btn { padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
-        .notice-btn-save { background: #3b82f6; color: white; }
-        .notice-btn-save:hover { background: #2563eb; }
-        .notice-btn-delete { background: #ef4444; color: white; }
-        .notice-btn-delete:hover { background: #dc2626; }
-        
-        /* 관리자 모드 */
-        .admin-badge { position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 6px 12px; border-radius: 12px; font-size: 10px; font-weight: 900; z-index: 1000; }
-        
-        /* 팝업 모달 */
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }
-        .modal.active { display: flex; }
-        .modal-content { background: white; border-radius: 16px; padding: 24px; max-width: 90%; max-height: 80%; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
-        .modal-title { font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 16px; }
-        .modal-close { position: absolute; top: 12px; right: 12px; font-size: 24px; cursor: pointer; color: #94a3b8; }
-        .modal-close:hover { color: #ef4444; }
-        
-        /* 로그인 폼 */
-        .login-form { max-width: 400px; }
-        .login-input { width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }
-        .login-btn { width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }
-        .login-btn:hover { background: #4338ca; }
+        body {{ font-family: 'Pretendard', sans-serif; background-color: #f8fafc; }}
+        .calendar-grid {{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }}
+        .day-cell {{ min-height: 110px; background-color: white; padding: 6px; position: relative; cursor: pointer; overflow: hidden; }}
+        .day-cell:hover {{ background-color: #f8fafc; }}
+        .day-cell.weekend-cell {{ background-color: #fef2f2; }}
+        .day-cell.admin-mode {{ cursor: crosshair; }}
+        .event-item {{ font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; background-color: #f1f5f9; border-left: 3px solid #94a3b8; color: #1e293b; font-weight: 700; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; cursor: pointer; }}
+        .event-item:hover {{ background-color: #e2e8f0; }}
+        .dept-badge {{ font-weight: 900; margin-left: 4px; white-space: nowrap; }}
+        .dept-교무 {{ color: #3b82f6; }}
+        .dept-연구 {{ color: #8b5cf6; }}
+        .dept-학생 {{ color: #10b981; }}
+        .dept-창의 {{ color: #f59e0b; }}
+        .dept-행정 {{ color: #14b8a6; }}
+        .holiday-badge {{ font-size: 10px; color: #dc2626; font-weight: 700; margin-top: 2px; }}
+        .text-sun {{ color: #ef4444; }} .text-sat {{ color: #3b82f6; }}
+        .del-x {{ color: #ef4444; cursor: pointer; margin-left: 4px; font-weight: bold; opacity: 0.7; }}
+        .del-x:hover {{ opacity: 1; }}
+        .year-view {{ display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }}
+        .year-month {{ background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }}
+        .year-month-title {{ font-weight: 900; color: #1e293b; margin-bottom: 8px; }}
+        .mini-calendar {{ display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: 10px; }}
+        .mini-day {{ padding: 4px; text-align: center; min-height: 30px; background: #f8fafc; border-radius: 4px; position: relative; }}
+        .mini-day.has-event {{ background: #dbeafe; font-weight: 700; }}
+        .mini-day.weekend {{ background: #fee2e2; }}
+        .mini-day.holiday {{ background: #fef2f2; }}
+        .mini-event {{ font-size: 7px; color: #4f46e5; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }}
+        .week-item {{ background-color: white; }}
+        .week-item.weekend-bg {{ background-color: #fef2f2 !important; }}
+        .week-day-label {{ font-size: 10px; color: #64748b; margin-left: 4px; }}
+        .sync-indicator {{ position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; }}
+        .sync-indicator.syncing {{ background: #f59e0b; animation: pulse 1s infinite; }}
+        .sync-indicator.editing {{ background: #10b981; }}
+        @keyframes pulse {{ 0%, 100% {{ opacity: 1; }} 50% {{ opacity: 0.5; }} }}
+        .notice-section {{ background: white; padding: 16px; border-radius: 12px; margin-top: 16px; border: 2px solid #e2e8f0; }}
+        .notice-item {{ margin-bottom: 12px; }}
+        .notice-label {{ font-weight: 900; color: #4f46e5; font-size: 12px; margin-bottom: 4px; }}
+        .notice-input-group {{ display: flex; gap: 8px; align-items: center; }}
+        .notice-input {{ flex: 1; border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; font-size: 12px; outline: none; }}
+        .notice-input:focus {{ border-color: #6366f1; background-color: #f0f9ff; }}
+        .notice-input.has-content {{ background-color: #e8f5e9; border-color: #66bb6a; font-weight: 700; color: #1b5e20; }}
+        .notice-btn {{ padding: 6px 12px; border-radius: 6px; font-size: 11px; font-weight: 700; cursor: pointer; transition: all 0.2s; white-space: nowrap; }}
+        .notice-btn-save {{ background: #3b82f6; color: white; }}
+        .notice-btn-save:hover {{ background: #2563eb; }}
+        .notice-btn-delete {{ background: #ef4444; color: white; }}
+        .notice-btn-delete:hover {{ background: #dc2626; }}
+        .admin-badge {{ position: fixed; top: 20px; right: 20px; background: #ef4444; color: white; padding: 6px 12px; border-radius: 12px; font-size: 10px; font-weight: 900; z-index: 1000; }}
+        .modal {{ display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; justify-content: center; align-items: center; }}
+        .modal.active {{ display: flex; }}
+        .modal-content {{ background: white; border-radius: 16px; padding: 24px; max-width: 90%; max-height: 80%; overflow-y: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }}
+        .modal-title {{ font-size: 18px; font-weight: 900; color: #1e293b; margin-bottom: 16px; }}
+        .modal-close {{ position: absolute; top: 12px; right: 12px; font-size: 24px; cursor: pointer; color: #94a3b8; }}
+        .modal-close:hover {{ color: #ef4444; }}
+        .login-form {{ max-width: 400px; }}
+        .login-input {{ width: 100%; padding: 12px; border: 2px solid #e2e8f0; border-radius: 8px; margin-bottom: 12px; font-size: 14px; }}
+        .login-btn {{ width: 100%; padding: 12px; background: #4f46e5; color: white; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; }}
+        .login-btn:hover {{ background: #4338ca; }}
     </style>
 </head>
 <body class="p-3">
@@ -110,7 +101,6 @@
         </footer>
     </div>
 
-    <!-- 관리자 표시 -->
     <div id="adminBadge" class="admin-badge" style="display:none;">
         🔐 관리자 모드
         <button onclick="app.logout()" style="margin-left:8px; background:#dc2626; padding:2px 6px; border-radius:4px; font-size:9px;">로그아웃</button>
@@ -118,7 +108,6 @@
 
     <div id="syncIndicator" class="sync-indicator">● 동기화 완료</div>
 
-    <!-- 로그인 모달 -->
     <div id="loginModal" class="modal">
         <div class="modal-content login-form" style="position:relative;">
             <span class="modal-close" onclick="app.closeModal('loginModal')">&times;</span>
@@ -130,7 +119,6 @@
         </div>
     </div>
 
-    <!-- 일정 상세 모달 -->
     <div id="eventModal" class="modal">
         <div class="modal-content" style="position:relative; max-width:600px;">
             <span class="modal-close" onclick="app.closeModal('eventModal')">&times;</span>
@@ -139,11 +127,11 @@
     </div>
 
     <script>
-        const app = {
-            API_URL: 'https://script.google.com/macros/s/AKfycbxJWIOqWzlIBIBQskT-zo7nb7vlw241VSnFZRTW3f-9LvEcozJ5lSYosGs4c6qAcoD9/exec',
+        const app = {{
+            API_URL: '{new_api_url}',
             
             events: [],
-            notices: {},
+            notices: {{}},
             currentDate: new Date(),
             viewMode: 'weekly',
             isEditing: false,
@@ -172,93 +160,91 @@
             
             dayNames: ['일', '월', '화', '수', '목', '금', '토'],
             
-            deptColors: {
+            deptColors: {{
                 '교무': 'dept-교무',
                 '연구': 'dept-연구',
                 '학생': 'dept-학생',
                 '창의': 'dept-창의',
                 '행정': 'dept-행정'
-            },
+            }},
             
-            getHoliday(dateStr) {
+            getHoliday(dateStr) {{
                 const found = this.holidays.find(h => h.startsWith(dateStr + ':'));
                 return found ? found.split(':')[1] : null;
-            },
+            }},
             
-            getDayName(date) {
+            getDayName(date) {{
                 return this.dayNames[date.getDay()];
-            },
+            }},
             
-            setSyncStatus(status) {
+            setSyncStatus(status) {{
                 const indicator = document.getElementById('syncIndicator');
-                if (status === 'editing') {
+                if (status === 'editing') {{
                     indicator.className = 'sync-indicator editing';
                     indicator.textContent = '✎ 입력 중...';
-                } else if (status === 'syncing') {
+                }} else if (status === 'syncing') {{
                     indicator.className = 'sync-indicator syncing';
                     indicator.textContent = '● 동기화 중...';
-                } else if (status === 'success') {
+                }} else if (status === 'success') {{
                     indicator.className = 'sync-indicator';
                     indicator.textContent = '● 동기화 완료';
-                } else if (status === 'error') {
+                }} else if (status === 'error') {{
                     indicator.className = 'sync-indicator';
                     indicator.style.background = '#ef4444';
                     indicator.textContent = '● 오류 발생';
-                }
-            },
+                }}
+            }},
             
-            getWeekKey(date = this.currentDate) {
+            getWeekKey(date = this.currentDate) {{
                 const d = new Date(date);
                 const day = d.getDay();
                 const offset = day === 0 ? -6 : -(day - 1);
                 d.setDate(d.getDate() + offset);
-                return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-            },
+                return `${{d.getFullYear()}}-${{String(d.getMonth() + 1).padStart(2, '0')}}-${{String(d.getDate()).padStart(2, '0')}}`;
+            }},
             
-            getMondayOfWeek(date = this.currentDate) {
+            getMondayOfWeek(date = this.currentDate) {{
                 const d = new Date(date);
                 const day = d.getDay();
                 const offset = day === 0 ? -6 : -(day - 1);
                 d.setDate(d.getDate() + offset);
                 return d;
-            },
+            }},
             
-            // 관리자 로그인
-            showLoginModal() {
+            showLoginModal() {{
                 document.getElementById('loginModal').classList.add('active');
-            },
+            }},
             
-            closeModal(modalId) {
+            closeModal(modalId) {{
                 document.getElementById(modalId).classList.remove('active');
-            },
+            }},
             
-            login() {
+            login() {{
                 const id = document.getElementById('adminId').value;
                 const pw = document.getElementById('adminPw').value;
                 
-                if (id === 'admin' && pw === '1234') {
+                if (id === 'admin' && pw === '1234') {{
                     this.isAdmin = true;
                     document.getElementById('adminBadge').style.display = 'block';
                     this.closeModal('loginModal');
                     alert('관리자 로그인 성공!\\n달력 날짜를 클릭하면 휴업일을 지정할 수 있습니다.');
                     this.render();
-                } else {
+                }} else {{
                     document.getElementById('loginError').textContent = '아이디 또는 비밀번호가 틀렸습니다.';
                     document.getElementById('loginError').style.display = 'block';
-                }
-            },
+                }}
+            }},
             
-            logout() {
-                if (confirm('로그아웃 하시겠습니까?')) {
+            logout() {{
+                if (confirm('로그아웃 하시겠습니까?')) {{
                     this.isAdmin = false;
                     document.getElementById('adminBadge').style.display = 'none';
                     alert('로그아웃 되었습니다.');
                     this.render();
-                }
-            },
+                }}
+            }},
             
-            // 일정 상세 모달
-            showEventModal(dateStr) {
+            showEventModal(dateStr) {{
                 const dayEvents = this.events.filter(e => e.date === dateStr);
                 const holiday = this.getHoliday(dateStr);
                 
@@ -266,150 +252,139 @@
                 const dayName = this.getDayName(date);
                 
                 let html = `
-                    <div class="modal-title">${date.getMonth()+1}월 ${date.getDate()}일 (${dayName})</div>
+                    <div class="modal-title">${{date.getMonth()+1}}월 ${{date.getDate()}}일 (${{dayName}})</div>
                 `;
                 
-                if (holiday) {
-                    html += `<div style="color:#ef4444; font-weight:700; margin-bottom:12px;">🎊 ${holiday}</div>`;
-                }
+                if (holiday) {{
+                    html += `<div style="color:#ef4444; font-weight:700; margin-bottom:12px;">🎊 ${{holiday}}</div>`;
+                }}
                 
-                if (dayEvents.length === 0) {
+                if (dayEvents.length === 0) {{
                     html += `<div style="color:#94a3b8; padding:20px; text-align:center;">일정이 없습니다.</div>`;
-                } else {
+                }} else {{
                     html += `<div style="margin-top:12px;">`;
-                    dayEvents.forEach(e => {
+                    dayEvents.forEach(e => {{
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
                         html += `
                             <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:8px; border-left:4px solid #6366f1;">
-                                <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">${e.title}</div>
+                                <div style="font-weight:700; color:#1e293b; margin-bottom:4px;">${{e.title}}</div>
                                 <div style="font-size:12px;">
-                                    <span class="dept-badge ${deptColorClass}">담당: ${e.dapt}</span>
+                                    <span class="dept-badge ${{deptColorClass}}">담당: ${{e.dapt}}</span>
                                 </div>
                             </div>
                         `;
-                    });
+                    }});
                     html += `</div>`;
-                }
+                }}
                 
                 document.getElementById('eventModalContent').innerHTML = html;
                 document.getElementById('eventModal').classList.add('active');
-            },
+            }},
             
-            // 서버 저장 강화
-            async saveToServer(action, data) {
-                try {
+            async saveToServer(action, data) {{
+                try {{
                     this.setSyncStatus('syncing');
                     console.log('💾 [저장 시작]', action, data);
                     
-                    const requestBody = JSON.stringify({ action, ...data });
-                    console.log('📤 요청 본문:', requestBody);
-                    
-                    const response = await fetch(this.API_URL, {
+                    const response = await fetch(this.API_URL, {{
                         method: 'POST',
-                        headers: { 
-                            'Content-Type': 'application/json'
-                        },
-                        body: requestBody,
-                        mode: 'cors'
-                    });
+                        body: JSON.stringify({{ action, ...data }})
+                    }});
                     
                     console.log('📥 응답 상태:', response.status);
                     
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
+                    if (!response.ok) {{
+                        throw new Error(`HTTP ${{response.status}}`);
+                    }}
                     
                     const result = await response.json();
                     console.log('✅ 저장 응답:', result);
                     
-                    if (result.success === false) {
+                    if (result.success === false) {{
                         throw new Error(result.error || '저장 실패');
-                    }
+                    }}
                     
                     this.setSyncStatus('success');
                     
-                    setTimeout(async () => {
+                    setTimeout(async () => {{
                         this.isEditing = false;
                         await this.loadFromServer();
-                    }, 1000);
+                    }}, 1000);
                     
                     return result;
-                } catch (error) {
+                }} catch (error) {{
                     console.error('❌ [저장 실패]', error);
                     this.setSyncStatus('error');
-                    alert(`저장 실패: ${error.message}\\n\\nF12 콘솔을 확인해주세요.`);
+                    alert(`저장 실패: ${{error.message}}`);
                     throw error;
-                }
-            },
+                }}
+            }},
             
-            async loadFromServer() {
+            async loadFromServer() {{
                 const now = Date.now();
-                if (this.isEditing || (now - this.lastSyncTime < 1000)) {
+                if (this.isEditing || (now - this.lastSyncTime < 1000)) {{
                     return;
-                }
+                }}
                 
-                try {
+                try {{
                     this.setSyncStatus('syncing');
                     console.log('📥 [로드 시작]');
                     
-                    const response = await fetch(this.API_URL + '?action=load&t=' + Date.now(), {
-                        method: 'GET',
-                        mode: 'cors'
-                    });
+                    const response = await fetch(this.API_URL + '?action=load&t=' + Date.now());
                     
                     console.log('📥 응답 상태:', response.status);
                     
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
+                    if (!response.ok) {{
+                        throw new Error(`HTTP ${{response.status}}`);
+                    }}
                     
                     const data = await response.json();
                     console.log('✅ 로드 데이터:', data);
                     
-                    this.events = (data.events || []).map(item => {
+                    this.events = (data.events || []).map(item => {{
                         let dateStr = item.date;
-                        if (typeof dateStr === 'string' && dateStr.includes('T')) {
+                        if (typeof dateStr === 'string' && dateStr.includes('T')) {{
                             dateStr = dateStr.split('T')[0];
-                        } else if (typeof dateStr === 'string') {
+                        }} else if (typeof dateStr === 'string') {{
                             dateStr = dateStr.substring(0, 10);
-                        }
-                        return {
+                        }}
+                        return {{
                             id: String(item.id),
                             date: dateStr,
                             title: item.title,
                             dapt: item.dapt
-                        };
-                    });
+                        }};
+                    }});
                     
-                    if (data.notices && typeof data.notices === 'object') {
-                        this.notices = { ...data.notices };
-                    }
+                    if (data.notices && typeof data.notices === 'object') {{
+                        this.notices = {{ ...data.notices }};
+                    }}
                     
                     this.lastSyncTime = now;
                     this.setSyncStatus('success');
                     this.render();
-                } catch (error) {
+                }} catch (error) {{
                     console.error('❌ [로드 실패]', error);
                     this.setSyncStatus('error');
-                }
-            },
+                }}
+            }},
             
-            async saveEvent() {
+            async saveEvent() {{
                 const dateInput = document.getElementById('inDate').value;
                 const title = document.getElementById('inTitle').value;
                 const dapt = document.getElementById('inDept').value;
                 
-                if (!dateInput || !title) {
+                if (!dateInput || !title) {{
                     alert('날짜와 내용을 입력하세요.');
                     return;
-                }
+                }}
                 
-                const newEvent = {
+                const newEvent = {{
                     id: Date.now().toString(),
                     date: dateInput,
                     title: title,
                     dapt: dapt
-                };
+                }};
                 
                 this.events.push(newEvent);
                 this.render();
@@ -417,153 +392,151 @@
                 
                 document.getElementById('inDate').value = '';
                 document.getElementById('inTitle').value = '';
-            },
+            }},
             
-            async deleteEvent(id) {
+            async deleteEvent(id) {{
                 if (!confirm('삭제하시겠습니까?')) return;
                 this.events = this.events.filter(e => e.id !== id);
                 this.render();
-                await this.saveToServer('deleteEvent', { id });
-            },
+                await this.saveToServer('deleteEvent', {{ id }});
+            }},
             
-            async toggleHoliday(dateStr) {
-                // 관리자만 휴업일 지정 가능
-                if (!this.isAdmin) {
+            async toggleHoliday(dateStr) {{
+                if (!this.isAdmin) {{
                     this.showEventModal(dateStr);
                     return;
-                }
+                }}
                 
                 const existing = this.events.find(e => e.date === dateStr && e.title === '휴업일');
                 
-                if (existing) {
-                    if (confirm('휴업일을 해제하시겠습니까?')) {
+                if (existing) {{
+                    if (confirm('휴업일을 해제하시겠습니까?')) {{
                         await this.deleteEvent(existing.id);
-                    }
-                } else {
-                    if (confirm('휴업일로 지정하시겠습니까?')) {
-                        const newEvent = {
+                    }}
+                }} else {{
+                    if (confirm('휴업일로 지정하시겠습니까?')) {{
+                        const newEvent = {{
                             id: Date.now().toString(),
                             date: dateStr,
                             title: '휴업일',
                             dapt: '학사'
-                        };
+                        }};
                         this.events.push(newEvent);
                         this.render();
                         await this.saveToServer('addEvent', newEvent);
-                    }
-                }
-            },
+                    }}
+                }}
+            }},
             
-            handleNoticeInput(role) {
+            handleNoticeInput(role) {{
                 const weekKey = this.getWeekKey();
-                const input = document.getElementById(`notice_${role}`);
+                const input = document.getElementById(`notice_${{role}}`);
                 if (!input) return;
                 
                 const value = input.value;
                 
-                if (!this.notices[weekKey]) {
-                    this.notices[weekKey] = {};
-                }
+                if (!this.notices[weekKey]) {{
+                    this.notices[weekKey] = {{}};
+                }}
                 this.notices[weekKey][role] = value;
                 
-                input.classList.remove('has-content', 'unsaved');
-                if (value.trim()) {
-                    input.classList.add('has-content', 'unsaved');
-                }
+                input.classList.remove('has-content');
+                if (value.trim()) {{
+                    input.classList.add('has-content');
+                }}
                 
                 this.isEditing = true;
                 this.setSyncStatus('editing');
-            },
+            }},
             
-            async saveNoticeBtn(role) {
+            async saveNoticeBtn(role) {{
                 const weekKey = this.getWeekKey();
-                const input = document.getElementById(`notice_${role}`);
+                const input = document.getElementById(`notice_${{role}}`);
                 if (!input) return;
                 
                 const value = input.value.trim();
                 
-                if (!this.notices[weekKey]) {
-                    this.notices[weekKey] = {};
-                }
+                if (!this.notices[weekKey]) {{
+                    this.notices[weekKey] = {{}};
+                }}
                 this.notices[weekKey][role] = value;
                 
-                try {
-                    await this.saveToServer('saveNotice', {
+                try {{
+                    await this.saveToServer('saveNotice', {{
                         weekKey,
                         role,
                         content: value
-                    });
+                    }});
                     
-                    input.classList.remove('unsaved');
-                    if (value) {
+                    if (value) {{
                         input.classList.add('has-content');
-                    }
+                    }}
                     
                     alert('저장되었습니다!');
-                } catch (error) {
-                    // 에러는 saveToServer에서 처리됨
-                }
-            },
+                }} catch (error) {{
+                    // 에러는 saveToServer에서 처리
+                }}
+            }},
             
-            async deleteNoticeBtn(role) {
+            async deleteNoticeBtn(role) {{
                 if (!confirm('이 안내사항을 삭제하시겠습니까?')) return;
                 
                 const weekKey = this.getWeekKey();
-                const input = document.getElementById(`notice_${role}`);
+                const input = document.getElementById(`notice_${{role}}`);
                 if (!input) return;
                 
-                if (this.notices[weekKey]) {
+                if (this.notices[weekKey]) {{
                     delete this.notices[weekKey][role];
-                }
+                }}
                 
                 input.value = '';
-                input.classList.remove('has-content', 'unsaved');
+                input.classList.remove('has-content');
                 
-                await this.saveToServer('saveNotice', {
+                await this.saveToServer('saveNotice', {{
                     weekKey,
                     role,
                     content: ''
-                });
+                }});
                 
                 alert('삭제되었습니다!');
-            },
+            }},
             
-            move(direction) {
-                if (this.viewMode === 'yearly') {
+            move(direction) {{
+                if (this.viewMode === 'yearly') {{
                     this.currentDate.setFullYear(this.currentDate.getFullYear() + direction);
-                } else if (this.viewMode === 'monthly') {
+                }} else if (this.viewMode === 'monthly') {{
                     this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-                } else {
+                }} else {{
                     this.currentDate.setDate(this.currentDate.getDate() + (direction * 7));
-                }
+                }}
                 this.render();
-            },
+            }},
             
-            setView(mode) {
+            setView(mode) {{
                 this.viewMode = mode;
                 this.render();
-            },
+            }},
             
-            renderYearly() {
+            renderYearly() {{
                 const year = this.currentDate.getFullYear();
                 let html = '<div class="year-view">';
                 
-                for (let m = 0; m < 12; m++) {
+                for (let m = 0; m < 12; m++) {{
                     html += `<div class="year-month">
-                        <div class="year-month-title">${year}년 ${m + 1}월</div>
+                        <div class="year-month-title">${{year}}년 ${{m + 1}}월</div>
                         <div class="mini-calendar">`;
                     
-                    ['일','월','화','수','목','금','토'].forEach(w => {
-                        html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`;
-                    });
+                    ['일','월','화','수','목','금','토'].forEach(w => {{
+                        html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${{w}}</div>`;
+                    }});
                     
                     const first = new Date(year, m, 1).getDay();
                     const last = new Date(year, m + 1, 0).getDate();
                     
                     for (let i = 0; i < first; i++) html += '<div></div>';
                     
-                    for (let d = 1; d <= last; d++) {
-                        const dateStr = `${year}-${String(m + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                    for (let d = 1; d <= last; d++) {{
+                        const dateStr = `${{year}}-${{String(m + 1).padStart(2, '0')}}-${{String(d).padStart(2, '0')}}`;
                         const dayIdx = new Date(year, m, d).getDay();
                         const dayEvents = this.events.filter(e => e.date === dateStr);
                         const holiday = this.getHoliday(dateStr);
@@ -572,47 +545,47 @@
                         const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-600');
                         
                         let cellClass = '';
-                        if (holiday || isHoliday || isWeekend) {
+                        if (holiday || isHoliday || isWeekend) {{
                             cellClass = 'holiday';
-                        } else if (dayEvents.length > 0) {
+                        }} else if (dayEvents.length > 0) {{
                             cellClass = 'has-event';
-                        }
+                        }}
                         
-                        html += `<div class="mini-day ${cellClass} ${colorClass}" onclick="app.showEventModal('${dateStr}')" style="cursor:pointer;" title="${dayEvents.map(e => e.title).join(', ')}">
-                            ${d}`;
+                        html += `<div class="mini-day ${{cellClass}} ${{colorClass}}" onclick="app.showEventModal('${{dateStr}}')" style="cursor:pointer;" title="${{dayEvents.map(e => e.title).join(', ')}}">
+                            ${{d}}`;
                         
-                        if (dayEvents.length > 0) {
+                        if (dayEvents.length > 0) {{
                             const shortTitle = dayEvents[0].title.substring(0, 3);
-                            html += `<div class="mini-event">${shortTitle}</div>`;
-                        }
+                            html += `<div class="mini-event">${{shortTitle}}</div>`;
+                        }}
                         
                         html += `</div>`;
-                    }
+                    }}
                     
                     html += '</div></div>';
-                }
+                }}
                 
                 return html + '</div>';
-            },
+            }},
             
-            renderMonthly() {
+            renderMonthly() {{
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 let html = '<div class="calendar-grid">';
                 
-                ['일','월','화','수','목','금','토'].forEach(w => {
-                    html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-bold text-slate-400">${w}</div>`;
-                });
+                ['일','월','화','수','목','금','토'].forEach(w => {{
+                    html += `<div class="bg-slate-50 p-2 text-center text-[11px] font-bold text-slate-400">${{w}}</div>`;
+                }});
                 
                 const first = new Date(year, month, 1).getDay();
                 const last = new Date(year, month + 1, 0).getDate();
                 
-                for (let i = 0; i < first; i++) {
+                for (let i = 0; i < first; i++) {{
                     html += '<div class="day-cell bg-slate-50/30"></div>';
-                }
+                }}
                 
-                for (let d = 1; d <= last; d++) {
-                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+                for (let d = 1; d <= last; d++) {{
+                    const dateStr = `${{year}}-${{String(month + 1).padStart(2, '0')}}-${{String(d).padStart(2, '0')}}`;
                     const dayIdx = new Date(year, month, d).getDay();
                     const holiday = this.getHoliday(dateStr);
                     const isWeekend = dayIdx === 0 || dayIdx === 6;
@@ -621,43 +594,43 @@
                     const cellClass = (isWeekend || holiday || isHoliday) ? 'weekend-cell' : '';
                     const adminClass = this.isAdmin ? 'admin-mode' : '';
                     
-                    html += `<div class="day-cell ${cellClass} ${adminClass}" onclick="app.toggleHoliday('${dateStr}')">
-                        <div class="text-[11px] font-black ${colorClass}">${d}</div>`;
+                    html += `<div class="day-cell ${{cellClass}} ${{adminClass}}" onclick="app.toggleHoliday('${{dateStr}}')">
+                        <div class="text-[11px] font-black ${{colorClass}}">${{d}}</div>`;
                     
-                    if (holiday) {
-                        html += `<div class="holiday-badge">${holiday}</div>`;
-                    }
+                    if (holiday) {{
+                        html += `<div class="holiday-badge">${{holiday}}</div>`;
+                    }}
                     
                     html += '<div class="mt-1">';
                     
-                    this.events.filter(e => e.date === dateStr).forEach(e => {
+                    this.events.filter(e => e.date === dateStr).forEach(e => {{
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
                         const shortTitle = e.title.substring(0, 3);
-                        html += `<div class="event-item" title="${e.title}" onclick="event.stopPropagation(); app.showEventModal('${dateStr}')">
-                            <span class="event-title">${shortTitle} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
+                        html += `<div class="event-item" title="${{e.title}}" onclick="event.stopPropagation(); app.showEventModal('${{dateStr}}')">
+                            <span class="event-title">${{shortTitle}} <span class="dept-badge ${{deptColorClass}}">(${{e.dapt}})</span></span>
                         </div>`;
-                    });
+                    }});
                     
                     html += '</div></div>';
-                }
+                }}
                 
                 return html + '</div>';
-            },
+            }},
             
-            renderWeekly() {
+            renderWeekly() {{
                 const start = new Date(this.currentDate);
                 start.setDate(this.currentDate.getDate() - this.currentDate.getDay());
                 
                 let html = '<div class="flex flex-col gap-2">';
                 
-                for (let i = 0; i < 7; i++) {
+                for (let i = 0; i < 7; i++) {{
                     const d = new Date(start);
                     d.setDate(start.getDate() + i);
                     
                     const year = d.getFullYear();
                     const month = String(d.getMonth() + 1).padStart(2, '0');
                     const day = String(d.getDate()).padStart(2, '0');
-                    const dateStr = `${year}-${month}-${day}`;
+                    const dateStr = `${{year}}-${{month}}-${{day}}`;
                     
                     const holiday = this.getHoliday(dateStr);
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
@@ -667,69 +640,69 @@
                     const dayColor = d.getDay() === 0 ? 'text-red-500' : (d.getDay() === 6 ? 'text-blue-500' : 'text-slate-500');
                     const weekendClass = (isWeekend || holiday || isHoliday) ? 'weekend-bg' : '';
                     
-                    html += `<div class="week-item ${weekendClass} p-4 rounded-xl border flex items-center shadow-sm">
+                    html += `<div class="week-item ${{weekendClass}} p-4 rounded-xl border flex items-center shadow-sm">
                         <div class="w-32 font-black text-indigo-900 border-r mr-4">
-                            ${d.getDate()}일
-                            <span class="week-day-label ${dayColor}">(${dayName})</span>`;
+                            ${{d.getDate()}}일
+                            <span class="week-day-label ${{dayColor}}">(${{dayName}})</span>`;
                     
-                    if (holiday) {
-                        html += `<div class="holiday-badge text-[9px]">${holiday}</div>`;
-                    }
+                    if (holiday) {{
+                        html += `<div class="holiday-badge text-[9px]">${{holiday}}</div>`;
+                    }}
                     
                     html += '</div><div class="flex-1">';
                     
-                    this.events.filter(e => e.date === dateStr).forEach(e => {
+                    this.events.filter(e => e.date === dateStr).forEach(e => {{
                         const deptColorClass = this.deptColors[e.dapt] || 'dept-교무';
                         html += `<div class="event-item mb-1 p-2" style="display:flex; justify-content:space-between;">
-                            <span>${e.title} <span class="dept-badge ${deptColorClass}">(${e.dapt})</span></span>
-                            <span class="del-x" onclick="app.deleteEvent('${e.id}')">✕</span>
+                            <span>${{e.title}} <span class="dept-badge ${{deptColorClass}}">(${{e.dapt}})</span></span>
+                            <span class="del-x" onclick="app.deleteEvent('${{e.id}}')">✕</span>
                         </div>`;
-                    });
+                    }});
                     
                     html += '</div></div>';
-                }
+                }}
                 
                 html += '</div>';
                 
                 const weekKey = this.getWeekKey();
                 const monday = this.getMondayOfWeek();
-                const weekNotices = this.notices[weekKey] || {};
+                const weekNotices = this.notices[weekKey] || {{}};
                 
                 const roles = [
-                    { id: 'principal', label: '🎓 교장' },
-                    { id: 'vprincipal', label: '👔 교감' },
-                    { id: 'admin', label: '🏢 행정실장' },
-                    { id: 'dept1', label: '📘 교무부' },
-                    { id: 'dept2', label: '📕 연구부' },
-                    { id: 'dept3', label: '📗 학생부' },
-                    { id: 'dept4', label: '📙 창의인성부' },
-                    { id: 'grade', label: '🎯 학년실' }
+                    {{ id: 'principal', label: '🎓 교장' }},
+                    {{ id: 'vprincipal', label: '👔 교감' }},
+                    {{ id: 'admin', label: '🏢 행정실장' }},
+                    {{ id: 'dept1', label: '📘 교무부' }},
+                    {{ id: 'dept2', label: '📕 연구부' }},
+                    {{ id: 'dept3', label: '📗 학생부' }},
+                    {{ id: 'dept4', label: '📙 창의인성부' }},
+                    {{ id: 'grade', label: '🎯 학년실' }}
                 ];
                 
                 let noticeHtml = `
                     <div class="notice-section">
-                        <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${monday.getFullYear()}.${String(monday.getMonth() + 1).padStart(2, '0')}.${String(monday.getDate()).padStart(2, '0')}~)</h3>
+                        <h3 class="font-black text-indigo-900 mb-4">📢 주간 안내사항 (${{monday.getFullYear()}}.${{String(monday.getMonth() + 1).padStart(2, '0')}}.${{String(monday.getDate()).padStart(2, '0')}}~)</h3>
                         <div class="text-xs text-emerald-600 mb-2">💡 입력하면 자동 저장됩니다. [저장] 버튼을 누르면 다른 기기에서도 확인할 수 있습니다.</div>
                 `;
                 
-                roles.forEach(role => {
+                roles.forEach(role => {{
                     const value = weekNotices[role.id] || '';
                     const hasContent = value.trim() ? 'has-content' : '';
                     
                     noticeHtml += `
                         <div class="notice-item">
-                            <div class="notice-label">${role.label}</div>
+                            <div class="notice-label">${{role.label}}</div>
                             <div class="notice-input-group">
-                                <input type="text" id="notice_${role.id}" class="notice-input ${hasContent}" 
-                                       value="${value}" 
-                                       oninput="app.handleNoticeInput('${role.id}')"
-                                       placeholder="${role.label} 안내사항 입력">
-                                <button class="notice-btn notice-btn-save" onclick="app.saveNoticeBtn('${role.id}')">저장</button>
-                                <button class="notice-btn notice-btn-delete" onclick="app.deleteNoticeBtn('${role.id}')">삭제</button>
+                                <input type="text" id="notice_${{role.id}}" class="notice-input ${{hasContent}}" 
+                                       value="${{value}}" 
+                                       oninput="app.handleNoticeInput('${{role.id}}')"
+                                       placeholder="${{role.label}} 안내사항 입력">
+                                <button class="notice-btn notice-btn-save" onclick="app.saveNoticeBtn('${{role.id}}')">저장</button>
+                                <button class="notice-btn notice-btn-delete" onclick="app.deleteNoticeBtn('${{role.id}}')">삭제</button>
                             </div>
                         </div>
                     `;
-                });
+                }});
                 
                 noticeHtml += '</div>';
                 
@@ -737,9 +710,9 @@
                 document.getElementById('weeklyNotices').style.display = 'block';
                 
                 return html;
-            },
+            }},
             
-            render() {
+            render() {{
                 const viewPort = document.getElementById('viewPort');
                 const titleText = document.getElementById('titleText');
                 const weeklyNotices = document.getElementById('weeklyNotices');
@@ -747,35 +720,36 @@
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth() + 1;
                 
-                if (this.viewMode === 'yearly') {
-                    titleText.textContent = `${year}년 전체 학사력`;
+                if (this.viewMode === 'yearly') {{
+                    titleText.textContent = `${{year}}년 전체 학사력`;
                     viewPort.innerHTML = this.renderYearly();
                     weeklyNotices.style.display = 'none';
-                } else if (this.viewMode === 'monthly') {
-                    titleText.textContent = `${year}년 ${month}월`;
+                }} else if (this.viewMode === 'monthly') {{
+                    titleText.textContent = `${{year}}년 ${{month}}월`;
                     viewPort.innerHTML = this.renderMonthly();
                     weeklyNotices.style.display = 'none';
-                } else {
-                    titleText.textContent = `${year}년 ${month}월 주간`;
+                }} else {{
+                    titleText.textContent = `${{year}}년 ${{month}}월 주간`;
                     viewPort.innerHTML = this.renderWeekly();
-                }
-            },
+                }}
+            }},
             
-            async init() {
+            async init() {{
                 console.log('🚀 [시스템 시작]');
+                console.log('📍 API URL:', this.API_URL);
                 await this.loadFromServer();
                 this.render();
-                setInterval(() => {
-                    if (!this.isEditing) {
+                setInterval(() => {{
+                    if (!this.isEditing) {{
                         this.loadFromServer();
-                    }
-                }, 10000);
-            }
-        };
+                    }}
+                }}, 10000);
+            }}
+        }};
         
-        window.addEventListener('DOMContentLoaded', () => {
+        window.addEventListener('DOMContentLoaded', () => {{
             app.init();
-        });
+        }});
     </script>
 </body>
 </html>
