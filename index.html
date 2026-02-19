@@ -59,9 +59,7 @@
         /* 배경색 설정: 주말 및 휴업일 */
         .weekend-bg, .holiday-bg { background-color: #fff1f2 !important; }
         
-        .sync-indicator { position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; }
-        .sync-indicator.syncing { background: #f59e0b; animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
         
         /* 주간 안내사항 스타일 */
         .notice-section { background-color: white; padding: 20px; border-radius: 16px; border: 1px solid #e2e8f0; margin-top: 20px; }
@@ -141,7 +139,6 @@
         </div>
     </div>
 
-    <div id="syncIndicator" class="sync-indicator">● 동기화 완료</div>
 
     <script>
         const app = {
@@ -171,20 +168,7 @@
                 return this.events.some(e => e.date === dateStr && (e.title.includes('재량휴업일') || e.title.includes('휴업일') || e.title.includes('휴무일')));
             },
             
-            setSyncStatus(status) {
-                const indicator = document.getElementById('syncIndicator');
-                if (status === 'syncing') {
-                    indicator.className = 'sync-indicator syncing';
-                    indicator.textContent = '● 동기화 중...';
-                } else if (status === 'success') {
-                    indicator.className = 'sync-indicator';
-                    indicator.textContent = '● 동기화 완료';
-                } else if (status === 'error') {
-                    indicator.className = 'sync-indicator';
-                    indicator.style.background = '#ef4444';
-                    indicator.textContent = '● 오류 발생';
-                }
-            },
+            setSyncStatus(status) { /* 동기화 표시 비활성화 */ },
             
             async loadFromServer() {
                 if (this.isSyncing) return;
