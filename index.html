@@ -12,14 +12,23 @@
         /* 모바일 월간 계획 최적화 */
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
         .day-cell { min-height: 80px; background-color: white; padding: 4px; position: relative; cursor: pointer; transition: background-color 0.2s; }
-        @media (min-width: 768px) { .day-cell { min-height: 110px; padding: 6px; } }
+        @media (min-width: 768px) { .day-cell { min-height: 120px; padding: 8px; } }
         
         .day-cell:hover { background-color: #f1f5f9; }
-        .day-cell.weekend-cell { background-color: #fef2f2; }
         
         /* 일정 아이템 스타일 및 부서별 색상 */
         .event-item { font-size: 9px; padding: 2px 4px; margin-top: 2px; border-radius: 3px; background-color: #f1f5f9; border-left: 2px solid #6366f1; font-weight: 700; display: flex; justify-content: space-between; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-        @media (min-width: 768px) { .event-item { font-size: 11px; padding: 3px 6px; margin-top: 3px; border-radius: 4px; border-left-width: 3px; } }
+        @media (min-width: 768px) { 
+            .event-item { 
+                font-size: 11px; 
+                padding: 4px 6px; 
+                margin-top: 4px; 
+                border-radius: 4px; 
+                border-left-width: 3px; 
+                white-space: normal; /* PC에서는 텍스트 줄바꿈 허용 */
+                word-break: break-all;
+            } 
+        }
         
         /* 부서별 텍스트 색상 (빨간색 제외) */
         .dept-교무 { color: #4338ca; border-left-color: #4338ca; }
@@ -45,7 +54,9 @@
         .mini-day.weekend { background: #fee2e2; }
         
         .week-item { background-color: white; }
-        .week-item.weekend-bg { background-color: #fef2f2 !important; }
+        
+        /* 배경색 설정: 주말 및 휴업일 */
+        .weekend-bg, .holiday-bg { background-color: #fff1f2 !important; }
         
         .sync-indicator { position: fixed; bottom: 20px; right: 20px; background: #4f46e5; color: white; padding: 8px 16px; border-radius: 20px; font-size: 11px; font-weight: 700; box-shadow: 0 4px 6px rgba(0,0,0,0.1); z-index: 1000; }
         .sync-indicator.syncing { background: #f59e0b; animation: pulse 1s infinite; }
@@ -63,7 +74,6 @@
         .notice-input.has-content { background-color: #fef9c3 !important; font-weight: normal !important; border-color: #facc15; }
         .notice-input:focus { border-color: #6366f1; ring: 2px solid #e0e7ff; }
         
-        .holiday-bg { background-color: #fff1f2 !important; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 2000; align-items: center; justify-content: center; }
         .modal-content { background: white; padding: 24px; border-radius: 20px; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
     </style>
@@ -151,9 +161,9 @@
                 return found ? found.split(':')[1] : null;
             },
 
-            // ⭐ '재량휴업일' 여부 확인
-            isDiscretionaryHoliday(dateStr) {
-                return this.events.some(e => e.date === dateStr && e.title.includes('재량휴업일'));
+            // ⭐ '재량휴업일', '휴업일', '휴무일' 여부 확인
+            isSpecialHoliday(dateStr) {
+                return this.events.some(e => e.date === dateStr && (e.title.includes('재량휴업일') || e.title.includes('휴업일') || e.title.includes('휴무일')));
             },
             
             setSyncStatus(status) {
@@ -348,10 +358,10 @@
                         const dayIdx = new Date(year, m, d).getDay();
                         const hasEvent = this.events.some(e => e.date === dateStr && !e.id.startsWith('notice_'));
                         const holiday = this.getHoliday(dateStr);
-                        const isDiscretionary = this.isDiscretionaryHoliday(dateStr); // ⭐ 재량휴업일 확인
+                        const isSpecial = this.isSpecialHoliday(dateStr);
                         const isWeekend = dayIdx === 0 || dayIdx === 6;
                         const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-600');
-                        const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
+                        const holidayClass = (holiday || isSpecial || isWeekend) ? 'holiday-bg' : '';
                         const cellClass = holiday || isWeekend ? 'weekend' : (hasEvent ? 'has-event' : '');
                         html += `<div class="mini-day ${cellClass} ${colorClass} ${holidayClass}" onclick="app.showDetail('${dateStr}')">${d}</div>`;
                     }
@@ -372,16 +382,18 @@
                     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
                     const dayIdx = new Date(year, month, d).getDay();
                     const holiday = this.getHoliday(dateStr);
-                    const isDiscretionary = this.isDiscretionaryHoliday(dateStr); // ⭐ 재량휴업일 확인
+                    const isSpecial = this.isSpecialHoliday(dateStr);
                     const isWeekend = dayIdx === 0 || dayIdx === 6;
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
-                    const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
+                    const holidayClass = (holiday || isSpecial || isWeekend) ? 'holiday-bg' : '';
                     html += `<div class="day-cell ${holidayClass}" onclick="app.showDetail('${dateStr}')">
                         <div class="text-[10px] md:text-[11px] font-black ${colorClass}">${d}</div>`;
                     if (holiday) html += `<div class="holiday-badge">${holiday}</div>`;
                     html += '<div class="mt-1">';
                     this.events.filter(e => e.date === dateStr && !e.id.startsWith('notice_')).forEach(e => {
-                        const displayTitle = e.title.substring(0, 3);
+                        // PC에서는 전체 제목 표시, 모바일에서는 3글자만 표시
+                        const isMobile = window.innerWidth < 768;
+                        const displayTitle = isMobile ? e.title.substring(0, 3) : e.title;
                         html += `<div class="event-item dept-${e.dapt}"><span>${displayTitle}</span></div>`;
                     });
                     html += '</div></div>';
@@ -407,14 +419,13 @@
                     d.setDate(monday.getDate() + i);
                     const dStr = this.formatDate(d);
                     const holiday = this.getHoliday(dStr);
-                    const isDiscretionary = this.isDiscretionaryHoliday(dStr); // ⭐ 재량휴업일 확인
+                    const isSpecial = this.isSpecialHoliday(dStr);
                     const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-                    const holidayClass = (holiday || isDiscretionary) ? 'holiday-bg' : '';
-                    const weekendClass = (isWeekend || holiday) ? 'weekend-bg' : '';
+                    const holidayClass = (holiday || isSpecial || isWeekend) ? 'holiday-bg' : '';
                     const dayOfWeek = this.days[d.getDay()];
                     const colorClass = d.getDay() === 0 || holiday ? 'text-sun' : (d.getDay() === 6 ? 'text-sat' : 'text-indigo-900');
                     
-                    html += `<div class="week-item ${weekendClass} ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm" onclick="app.showDetail('${dStr}')">
+                    html += `<div class="week-item ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm" onclick="app.showDetail('${dStr}')">
                         <div class="w-16 md:w-24 font-black ${colorClass} border-r mr-4">${d.getDate()}일(${dayOfWeek})`;
                     if (holiday) html += `<div class="holiday-badge text-[9px]">${holiday}</div>`;
                     html += '</div><div class="flex-1">';
@@ -454,6 +465,7 @@
                 await this.loadFromServer();
                 this.render();
                 setInterval(() => { if (!this.isEditing) this.loadFromServer(); }, 5000);
+                window.addEventListener('resize', () => this.render()); // 화면 크기 변경 시 재렌더링
             },
 
             async toggleHoliday(dateStr) {
