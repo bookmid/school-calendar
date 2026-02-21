@@ -11,12 +11,12 @@
         
         .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 1px; background-color: #e2e8f0; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
         .day-cell { min-height: 80px; background-color: white; padding: 4px; position: relative; cursor: pointer; transition: background-color 0.2s; }
-        @media (min-width: 768px) { .day-cell { min-height: 120px; padding: 8px; } }
+        @media (min-width: 768px) { .day-cell { min-height: 140px; padding: 12px; } }
         .day-cell:hover { background-color: #f1f5f9; }
         
         .event-item { font-size: 13px; padding: 4px 6px; margin-top: 3px; border-radius: 3px; background-color: #f1f5f9; border-left: 2px solid #6366f1; font-weight: 700; display: flex; justify-content: space-between; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
         @media (min-width: 768px) { 
-            .event-item { font-size: 11px; padding: 4px 6px; margin-top: 4px; border-radius: 4px; border-left-width: 3px; white-space: normal; word-break: break-all; } 
+            .event-item { font-size: 14px; padding: 6px 8px; margin-top: 5px; border-radius: 5px; border-left-width: 3px; white-space: normal; word-break: break-all; } 
         }
         
         .dept-교무 { color: #4338ca; border-left-color: #4338ca; }
@@ -30,14 +30,22 @@
         .dept-학사 { color: #1e293b; border-left-color: #1e293b; }
 
         .holiday-badge { font-size: 11px; color: #dc2626; font-weight: 700; margin-top: 1px; }
+        @media (min-width: 768px) { .holiday-badge { font-size: 13px; } }
+        
         .text-sun { color: #ef4444; } .text-sat { color: #3b82f6; }
         .del-x { color: #ef4444; cursor: pointer; margin-left: 4px; font-weight: bold; }
         
         .year-view { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
         .year-month { background: white; padding: 16px; border-radius: 12px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; }
+        .year-month-title { font-weight: 900; color: #1e293b; margin-bottom: 8px; font-size: 16px; }
+        @media (min-width: 768px) { .year-month-title { font-size: 18px; } }
+        
         .mini-calendar { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; font-size: 10px; }
+        @media (min-width: 768px) { .mini-calendar { font-size: 12px; } }
+        
         .mini-day { padding: 4px; text-align: center; min-height: 30px; background: #f8fafc; border-radius: 4px; cursor: pointer; }
+        @media (min-width: 768px) { .mini-day { min-height: 36px; padding: 6px; } }
+        
         .mini-day.has-event { background: #dbeafe; font-weight: 700; }
         .mini-day.weekend { background: #fee2e2; }
         
@@ -49,7 +57,11 @@
         .notice-box { display: flex; flex-direction: column; gap: 4px; position: relative; }
         .notice-header { display: flex; justify-content: space-between; align-items: center; }
         .notice-label { font-size: 13px; font-weight: 800; color: #4338ca; }
+        @media (min-width: 768px) { .notice-label { font-size: 15px; } }
+        
         .notice-input { border: 1px solid #cbd5e1; border-radius: 8px; padding: 10px; font-size: 14px; outline: none; transition: all 0.2s; min-height: 60px; resize: vertical; background-color: white; font-weight: normal; }
+        @media (min-width: 768px) { .notice-input { font-size: 15px; padding: 12px; min-height: 70px; } }
+        
         .notice-input.has-content { background-color: #fef9c3 !important; font-weight: normal !important; border-color: #facc15; }
         .notice-input:focus { border-color: #6366f1; ring: 2px solid #e0e7ff; }
         
@@ -57,53 +69,41 @@
         .modal-content { background: white; padding: 24px; border-radius: 20px; width: 90%; max-width: 400px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1); }
 
         .week-date-label { font-size: 15px; font-weight: 900; line-height: 1.3; }
-        @media (min-width: 768px) { .week-date-label { font-size: 14px; } }
-        
-        /* 창체 시수 관리 스타일 */
-        .changche-table { width: 100%; overflow-x: auto; background: white; border-radius: 16px; padding: 16px; }
-        .changche-table table { width: 100%; border-collapse: collapse; min-width: 900px; }
-        .changche-table th { background: #eef2ff; padding: 8px 4px; font-size: 11px; font-weight: 900; border: 1px solid #cbd5e1; text-align: center; }
-        .changche-table td { padding: 6px 4px; font-size: 11px; border: 1px solid #e2e8f0; text-align: center; }
-        .changche-table input { width: 100%; border: none; text-align: center; padding: 4px; font-size: 11px; background: transparent; }
-        .changche-table input:focus { outline: 2px solid #6366f1; background: #fef9c3; border-radius: 4px; }
-        .changche-header { background: #fef3c7; font-weight: 900; color: #92400e; }
-        .changche-total { background: #dbeafe; font-weight: 900; color: #1e40af; }
-        .grade-section { background: #f1f5f9; font-weight: 800; color: #475569; }
+        @media (min-width: 768px) { .week-date-label { font-size: 17px; } }
     </style>
 </head>
 <body class="p-3">
     <div class="max-w-6xl mx-auto">
         <header class="flex justify-between items-center mb-6 bg-indigo-900 p-4 rounded-2xl text-white shadow-lg">
-            <h1 class="font-black text-sm md:text-base">🏫 구례중 학사력</h1>
+            <h1 class="font-black text-sm md:text-lg">🏫 구례중 학사력</h1>
             <div class="flex gap-1 md:gap-2">
-                <button onclick="app.setView('weekly')" class="text-[10px] md:text-xs bg-indigo-700 px-2 md:px-3 py-1.5 rounded-lg font-bold">주간</button>
-                <button onclick="app.setView('monthly')" class="text-[10px] md:text-xs bg-indigo-700 px-2 md:px-3 py-1.5 rounded-lg font-bold">월간</button>
-                <button onclick="app.setView('yearly')" class="text-[10px] md:text-xs bg-indigo-700 px-2 md:px-3 py-1.5 rounded-lg font-bold">연간</button>
-                <button onclick="app.setView('changche')" class="text-[10px] md:text-xs bg-indigo-700 px-2 md:px-3 py-1.5 rounded-lg font-bold">창체</button>
+                <button onclick="app.setView('weekly')" class="text-[10px] md:text-sm bg-indigo-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-bold hover:bg-indigo-600">주간</button>
+                <button onclick="app.setView('monthly')" class="text-[10px] md:text-sm bg-indigo-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-bold hover:bg-indigo-600">월간</button>
+                <button onclick="app.setView('yearly')" class="text-[10px] md:text-sm bg-indigo-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-bold hover:bg-indigo-600">연간</button>
             </div>
         </header>
 
         <section id="eventInputSection" class="bg-white p-4 rounded-2xl shadow-sm border mb-4 grid grid-cols-2 md:grid-cols-4 gap-2">
-            <input type="date" id="inDate" class="border p-2 rounded-xl text-sm outline-none">
-            <input type="text" id="inTitle" placeholder="행사내용" class="border p-2 rounded-xl text-sm outline-none">
-            <select id="inDept" class="border p-2 rounded-xl text-sm outline-none">
+            <input type="date" id="inDate" class="border p-2 rounded-xl text-sm md:text-base outline-none">
+            <input type="text" id="inTitle" placeholder="행사내용" class="border p-2 rounded-xl text-sm md:text-base outline-none">
+            <select id="inDept" class="border p-2 rounded-xl text-sm md:text-base outline-none">
                 <option>교무</option><option>연구</option><option>학생</option><option>창의</option><option>행정</option>
                 <option>1학년</option><option>2학년</option><option>3학년</option>
             </select>
-            <button onclick="app.saveEvent()" class="bg-indigo-600 text-white rounded-xl font-bold py-2">저장하기</button>
+            <button onclick="app.saveEvent()" class="bg-indigo-600 text-white rounded-xl font-bold py-2 text-sm md:text-base hover:bg-indigo-700">저장하기</button>
         </section>
 
         <div class="flex justify-between items-center bg-white p-3 rounded-2xl border mb-4">
-            <button onclick="app.move(-1)" class="text-indigo-600 font-bold px-4">❮</button>
-            <h2 id="titleText" class="text-sm md:text-lg font-black text-slate-700">로딩 중...</h2>
-            <button onclick="app.move(1)" class="text-indigo-600 font-bold px-4">❯</button>
+            <button onclick="app.move(-1)" class="text-indigo-600 font-bold px-4 text-lg md:text-xl hover:text-indigo-800">❮</button>
+            <h2 id="titleText" class="text-sm md:text-xl font-black text-slate-700">로딩 중...</h2>
+            <button onclick="app.move(1)" class="text-indigo-600 font-bold px-4 text-lg md:text-xl hover:text-indigo-800">❯</button>
         </div>
 
         <div id="viewPort"></div>
         
         <div id="noticePort" class="hidden">
             <div class="notice-section">
-                <h3 class="font-black text-indigo-900 mb-4 flex items-center gap-2">📢 주간 안내사항</h3>
+                <h3 class="font-black text-indigo-900 mb-4 flex items-center gap-2 text-base md:text-lg">📢 주간 안내사항</h3>
                 <div class="notice-list">
                     <div class="notice-box"><div class="notice-header"><label class="notice-label">교장</label><span class="del-x" onclick="app.clearNotice('교장')">✕</span></div><textarea data-dept="교장" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
                     <div class="notice-box"><div class="notice-header"><label class="notice-label">교감</label><span class="del-x" onclick="app.clearNotice('교감')">✕</span></div><textarea data-dept="교감" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
@@ -117,16 +117,16 @@
             </div>
         </div>
 
-        <footer class="text-center py-8 text-slate-400 text-[10px]">
+        <footer class="text-center py-8 text-slate-400 text-[10px] md:text-xs">
             © Developed by Choi Gwang-cheol of Gurye Middle School in 2026. All rights reserved.
         </footer>
     </div>
 
     <div id="detailModal" class="modal" onclick="app.closeModal()">
         <div class="modal-content" onclick="event.stopPropagation()">
-            <h3 id="modalDate" class="font-black text-indigo-900 mb-2"></h3>
-            <div id="modalContent" class="space-y-2 max-h-60 overflow-y-auto mb-4"></div>
-            <button onclick="app.closeModal()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl">닫기</button>
+            <h3 id="modalDate" class="font-black text-indigo-900 mb-2 text-base md:text-lg"></h3>
+            <div id="modalContent" class="space-y-2 max-h-60 overflow-y-auto mb-4 text-sm md:text-base"></div>
+            <button onclick="app.closeModal()" class="w-full bg-indigo-600 text-white font-bold py-2 rounded-xl text-sm md:text-base hover:bg-indigo-700">닫기</button>
         </div>
     </div>
 
@@ -134,19 +134,11 @@
         const app = {
             API_URL: 'https://script.google.com/macros/s/AKfycbwRtXEToXLJF3Vm3k2jpp76K478Mt6OeADDDCTmz7HoIYAzFNIc1yvC17H4hfYN3S2i/exec',
             events: [],
-            changcheData: [], // 창체 시수 데이터
             currentDate: new Date(),
             viewMode: 'weekly',
             isSyncing: false,
             isEditing: false,
             days: ['일', '월', '화', '수', '목', '금', '토'],
-            
-            // 창체 활동 항목 정의
-            changcheCategories: {
-                '1학년': ['자율활동', '동아리활동', '봉사활동', '진로활동'],
-                '2학년': ['자율활동', '동아리활동', '봉사활동', '진로활동'],
-                '3학년': ['자율활동', '동아리활동', '봉사활동', '진로활동']
-            },
             
             holidays: [
                 '2026-01-01:신정', '2026-02-16:설날연휴', '2026-02-17:설날', '2026-02-18:설날연휴',
@@ -172,8 +164,6 @@
                 if (this.API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
                     const data = localStorage.getItem('gurye_events');
                     this.events = data ? JSON.parse(data) : [];
-                    const changcheStorage = localStorage.getItem('gurye_changche');
-                    this.changcheData = changcheStorage ? JSON.parse(changcheStorage) : [];
                     this.render();
                     return;
                 }
@@ -183,21 +173,12 @@
                     const response = await fetch(this.API_URL + '?t=' + Date.now());
                     const data = await response.json();
                     
-                    // 일반 이벤트와 창체 데이터 분리
-                    this.events = data.filter(item => !item.id.startsWith('changche_')).map(item => {
+                    this.events = data.map(item => {
                         let dateStr = item.date;
                         if (typeof dateStr === 'string' && dateStr.includes('T')) dateStr = dateStr.split('T')[0];
                         else if (typeof dateStr === 'string') dateStr = dateStr.substring(0, 10);
                         return { id: String(item.id), date: dateStr, title: item.title, dapt: item.dapt };
                     });
-                    
-                    this.changcheData = data.filter(item => item.id.startsWith('changche_')).map(item => ({
-                        id: String(item.id),
-                        date: item.date,
-                        grade: item.grade,
-                        category: item.category,
-                        hours: parseInt(item.hours) || 0
-                    }));
                     
                     this.setSyncStatus('success');
                     this.render();
@@ -212,7 +193,6 @@
             async saveToServer(action, data) {
                 if (this.API_URL === 'YOUR_GOOGLE_APPS_SCRIPT_URL_HERE') {
                     localStorage.setItem('gurye_events', JSON.stringify(this.events));
-                    localStorage.setItem('gurye_changche', JSON.stringify(this.changcheData));
                     return;
                 }
                 try {
@@ -338,143 +318,13 @@
             move(direction) {
                 if (this.viewMode === 'yearly') this.currentDate.setFullYear(this.currentDate.getFullYear() + direction);
                 else if (this.viewMode === 'monthly') this.currentDate.setMonth(this.currentDate.getMonth() + direction);
-                else if (this.viewMode === 'changche') this.currentDate.setMonth(this.currentDate.getMonth() + direction);
                 else this.currentDate.setDate(this.currentDate.getDate() + (direction * 7));
                 this.render();
             },
             
             setView(mode) { 
                 this.viewMode = mode;
-                // 창체 화면에서는 행사 입력 섹션 숨기기
-                const eventSection = document.getElementById('eventInputSection');
-                if (mode === 'changche') {
-                    eventSection.style.display = 'none';
-                } else {
-                    eventSection.style.display = 'grid';
-                }
                 this.render(); 
-            },
-            
-            // 창체 시수 저장
-            async saveChangche(date, grade, category, hours) {
-                const id = `changche_${date}_${grade}_${category}`;
-                const existingIndex = this.changcheData.findIndex(c => c.id === id);
-                
-                if (hours === 0 || hours === '') {
-                    if (existingIndex !== -1) {
-                        this.changcheData.splice(existingIndex, 1);
-                        await this.saveToServer('delete', { id });
-                    }
-                } else {
-                    const newData = { id, date, grade, category, hours: parseInt(hours) };
-                    if (existingIndex !== -1) {
-                        this.changcheData[existingIndex] = newData;
-                    } else {
-                        this.changcheData.push(newData);
-                    }
-                    await this.saveToServer('add', { ...newData, title: `${grade}_${category}`, dapt: '창체' });
-                }
-            },
-            
-            // 창체 시수 조회
-            getChangcheHours(date, grade, category) {
-                const found = this.changcheData.find(c => c.date === date && c.grade === grade && c.category === category);
-                return found ? found.hours : 0;
-            },
-            
-            // 창체 누적 시수 계산
-            getTotalChangche(grade, category, endDate) {
-                const year = new Date(endDate).getFullYear();
-                const startDate = `${year}-03-01`; // 학기 시작일
-                
-                return this.changcheData
-                    .filter(c => c.grade === grade && c.category === category && c.date >= startDate && c.date <= endDate)
-                    .reduce((sum, c) => sum + c.hours, 0);
-            },
-            
-            // 창체 화면 렌더링
-            renderChangche() {
-                const year = this.currentDate.getFullYear();
-                const month = this.currentDate.getMonth();
-                const firstDay = new Date(year, month, 1);
-                const lastDay = new Date(year, month + 1, 0);
-                
-                // 해당 월의 모든 날짜 생성
-                const dates = [];
-                for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
-                    dates.push(new Date(d));
-                }
-                
-                let html = `
-                <div class="changche-table">
-                    <div class="text-center mb-4">
-                        <h2 class="text-2xl font-black text-indigo-900">${year}학년도 ${month < 7 ? '1' : '2'}학기 창체 시수</h2>
-                        <p class="text-sm text-slate-500 mt-2">날짜별 학년/활동별 창체 시수를 입력하세요</p>
-                    </div>
-                    <div style="overflow-x: auto;">
-                    <table>
-                        <thead>
-                            <tr class="changche-header">
-                                <th rowspan="2" style="min-width:80px;">월/일/요일</th>
-                                <th rowspan="2" style="min-width:120px;">학사력</th>
-                                <th colspan="4">1학년 (2022개정)</th>
-                                <th colspan="4">2학년 (2022개정)</th>
-                                <th colspan="4">3학년 (2015교육과정)</th>
-                            </tr>
-                            <tr class="changche-header">
-                                <th style="min-width:60px;">자율</th>
-                                <th style="min-width:60px;">봉사</th>
-                                <th style="min-width:60px;">진로</th>
-                                <th style="min-width:60px;">동아리</th>
-                                <th style="min-width:60px;">자율</th>
-                                <th style="min-width:60px;">봉사</th>
-                                <th style="min-width:60px;">진로</th>
-                                <th style="min-width:60px;">동아리</th>
-                                <th style="min-width:60px;">자율</th>
-                                <th style="min-width:60px;">봉사</th>
-                                <th style="min-width:60px;">진로</th>
-                                <th style="min-width:60px;">동아리</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-                
-                dates.forEach(date => {
-                    const dateStr = this.formatDate(date);
-                    const dayOfWeek = this.days[date.getDay()];
-                    const dayEvents = this.events.filter(e => e.date === dateStr && !e.id.startsWith('notice_'));
-                    const eventText = dayEvents.map(e => e.title).join(', ') || '';
-                    
-                    html += `<tr>
-                        <td><strong>${month + 1}/${date.getDate()}(${dayOfWeek})</strong></td>
-                        <td style="text-align:left; padding-left:8px;">${eventText}</td>`;
-                    
-                    ['1학년', '2학년', '3학년'].forEach(grade => {
-                        ['자율활동', '봉사활동', '진로활동', '동아리활동'].forEach(category => {
-                            const hours = this.getChangcheHours(dateStr, grade, category);
-                            html += `<td><input type="number" min="0" max="10" value="${hours || ''}" 
-                                onchange="app.saveChangche('${dateStr}', '${grade}', '${category}', this.value)" 
-                                placeholder="0"></td>`;
-                        });
-                    });
-                    
-                    html += `</tr>`;
-                });
-                
-                // 누적 합계 행
-                const lastDate = this.formatDate(lastDay);
-                html += `<tr class="changche-total">
-                    <td colspan="2"><strong>📊 누적 시수</strong></td>`;
-                
-                ['1학년', '2학년', '3학년'].forEach(grade => {
-                    ['자율활동', '봉사활동', '진로활동', '동아리활동'].forEach(category => {
-                        const total = this.getTotalChangche(grade, category, lastDate);
-                        html += `<td><strong>${total}</strong></td>`;
-                    });
-                });
-                
-                html += `</tr></tbody></table></div></div>`;
-                
-                return html;
             },
             
             renderYearly() {
@@ -482,7 +332,7 @@
                 let html = '<div class="year-view">';
                 for (let m = 0; m < 12; m++) {
                     html += `<div class="year-month"><div class="year-month-title">${year}년 ${m + 1}월</div><div class="mini-calendar">`;
-                    this.days.forEach(w => html += `<div class="text-[9px] text-slate-400 font-bold text-center p-1">${w}</div>`);
+                    this.days.forEach(w => html += `<div class="text-[9px] md:text-[11px] text-slate-400 font-bold text-center p-1">${w}</div>`);
                     const first = new Date(year, m, 1).getDay();
                     const last = new Date(year, m + 1, 0).getDate();
                     for (let i = 0; i < first; i++) html += '<div></div>';
@@ -507,7 +357,7 @@
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth();
                 let html = '<div class="calendar-grid">';
-                this.days.forEach(w => html += `<div class="bg-slate-50 p-2 text-center text-[10px] md:text-[11px] font-bold text-slate-400">${w}</div>`);
+                this.days.forEach(w => html += `<div class="bg-slate-50 p-2 text-center text-[10px] md:text-sm font-bold text-slate-400">${w}</div>`);
                 const first = new Date(year, month, 1).getDay();
                 const last = new Date(year, month + 1, 0).getDate();
                 for (let i = 0; i < first; i++) html += '<div class="day-cell bg-slate-50/30"></div>';
@@ -520,7 +370,7 @@
                     const colorClass = dayIdx === 0 || holiday ? 'text-sun' : (dayIdx === 6 ? 'text-sat' : 'text-slate-400');
                     const holidayClass = (holiday || isSpecial || isWeekend) ? 'holiday-bg' : '';
                     html += `<div class="day-cell ${holidayClass}" onclick="app.showDetail('${dateStr}')">
-                        <div class="text-[10px] md:text-[11px] font-black ${colorClass}">${d}</div>`;
+                        <div class="text-[10px] md:text-sm font-black ${colorClass}">${d}</div>`;
                     if (holiday) html += `<div class="holiday-badge">${holiday}</div>`;
                     html += '<div class="mt-1">';
                     this.events.filter(e => e.date === dateStr && !e.id.startsWith('notice_')).forEach(e => {
@@ -557,8 +407,8 @@
                     const dayOfWeek = this.days[d.getDay()];
                     const colorClass = d.getDay() === 0 || holiday ? 'text-sun' : (d.getDay() === 6 ? 'text-sat' : 'text-indigo-900');
                     
-                    html += `<div class="week-item ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm" onclick="app.showDetail('${dStr}')">
-                        <div class="w-20 md:w-24 week-date-label font-black ${colorClass} border-r mr-4">${d.getDate()}일(${dayOfWeek})`;
+                    html += `<div class="week-item ${holidayClass} p-4 rounded-xl border flex items-center shadow-sm cursor-pointer hover:shadow-md" onclick="app.showDetail('${dStr}')">
+                        <div class="w-20 md:w-28 week-date-label font-black ${colorClass} border-r mr-4">${d.getDate()}일(${dayOfWeek})`;
                     if (holiday) html += `<div class="holiday-badge">${holiday}</div>`;
                     html += '</div><div class="flex-1">';
                     this.events.filter(e => e.date === dStr && !e.id.startsWith('notice_')).forEach(e => {
@@ -579,11 +429,7 @@
                 const year = this.currentDate.getFullYear();
                 const month = this.currentDate.getMonth() + 1;
                 
-                if (this.viewMode === 'changche') {
-                    titleText.textContent = `${year}년 ${month}월 창체 시수`;
-                    viewPort.innerHTML = this.renderChangche();
-                    noticePort.classList.add('hidden');
-                } else if (this.viewMode === 'yearly') {
+                if (this.viewMode === 'yearly') {
                     titleText.textContent = `${year}년 전체 학사력`;
                     viewPort.innerHTML = this.renderYearly();
                     noticePort.classList.add('hidden');
