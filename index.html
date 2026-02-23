@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>구례북중 주간계획</title>
+    <title>구례중 주간계획</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Pretendard:wght@400;700;900&display=swap');
@@ -22,7 +23,7 @@
         .dept-교무 { color: #4338ca; border-left-color: #4338ca; }
         .dept-연구 { color: #059669; border-left-color: #059669; }
         .dept-학생 { color: #d97706; border-left-color: #d97706; }
-        .dept-진로 { color: #7c3aed; border-left-color: #7c3aed; }
+        .dept-창의 { color: #7c3aed; border-left-color: #7c3aed; }
         .dept-행정 { color: #475569; border-left-color: #475569; }
         .dept-1학년 { color: #2563eb; border-left-color: #2563eb; }
         .dept-2학년 { color: #db2777; border-left-color: #db2777; }
@@ -75,7 +76,7 @@
 <body class="p-3">
     <div class="max-w-6xl mx-auto">
         <header class="flex justify-between items-center mb-6 bg-indigo-900 p-4 rounded-2xl text-white shadow-lg">
-            <h1 class="font-black text-sm md:text-lg">🏫 구례북중 학사력</h1>
+            <h1 class="font-black text-sm md:text-lg">🏫 구례중 학사력</h1>
             <div class="flex gap-1 md:gap-2">
                 <button onclick="app.setView('weekly')" class="text-[10px] md:text-sm bg-indigo-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-bold hover:bg-indigo-600">주간</button>
                 <button onclick="app.setView('monthly')" class="text-[10px] md:text-sm bg-indigo-700 px-2 md:px-4 py-1.5 md:py-2 rounded-lg font-bold hover:bg-indigo-600">월간</button>
@@ -87,7 +88,7 @@
             <input type="date" id="inDate" class="border p-2 rounded-xl text-sm md:text-base outline-none">
             <input type="text" id="inTitle" placeholder="행사내용" class="border p-2 rounded-xl text-sm md:text-base outline-none">
             <select id="inDept" class="border p-2 rounded-xl text-sm md:text-base outline-none">
-                <option>교무</option><option>연구</option><option>학생</option><option>진로</option><option>행정</option>
+                <option>교무</option><option>연구</option><option>학생</option><option>창의</option><option>행정</option>
                 <option>1학년</option><option>2학년</option><option>3학년</option>
             </select>
             <button onclick="app.saveEvent()" class="bg-indigo-600 text-white rounded-xl font-bold py-2 text-sm md:text-base hover:bg-indigo-700">저장하기</button>
@@ -106,13 +107,13 @@
                 <h3 class="font-black text-indigo-900 mb-4 flex items-center gap-2 text-base md:text-lg">📢 주간 안내사항</h3>
                 <div class="notice-list">
                     <div class="notice-box"><div class="notice-header"><label class="notice-label">교장</label><span class="del-x" onclick="app.clearNotice('교장')">✕</span></div><textarea data-dept="교장" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">행정실</label><span class="del-x" onclick="app.clearNotice('행정실')">✕</span></div><textarea data-dept="행정실" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">교무</label><span class="del-x" onclick="app.clearNotice('교무')">✕</span></div><textarea data-dept="교무" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">연구</label><span class="del-x" onclick="app.clearNotice('연구부')">✕</span></div><textarea data-dept="연구부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">교감</label><span class="del-x" onclick="app.clearNotice('교감')">✕</span></div><textarea data-dept="교감" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">행정실장</label><span class="del-x" onclick="app.clearNotice('행정실장')">✕</span></div><textarea data-dept="행정실" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">교무부</label><span class="del-x" onclick="app.clearNotice('교무부')">✕</span></div><textarea data-dept="교무부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">연구부</label><span class="del-x" onclick="app.clearNotice('연구부')">✕</span></div><textarea data-dept="연구부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
                     <div class="notice-box"><div class="notice-header"><label class="notice-label">학생부</label><span class="del-x" onclick="app.clearNotice('학생부')">✕</span></div><textarea data-dept="학생부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">진로</label><span class="del-x" onclick="app.clearNotice('진로')">✕</span></div><textarea data-dept="진로" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">학년</label><span class="del-x" onclick="app.clearNotice('학년부')">✕</span></div><textarea data-dept="학년부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
-                    <div class="notice-box"><div class="notice-header"><label class="notice-label">기타</label><span class="del-x" onclick="app.clearNotice('기타')">✕</span></div><textarea data-dept="기타" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">창의인성부</label><span class="del-x" onclick="app.clearNotice('창의인성부')">✕</span></div><textarea data-dept="창의인성부" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
+                    <div class="notice-box"><div class="notice-header"><label class="notice-label">학년실</label><span class="del-x" onclick="app.clearNotice('학년실')">✕</span></div><textarea data-dept="학년실" class="notice-input" oninput="app.updateInputStyle(this); app.markAsEditing(this)" onchange="app.saveNotice(this)"></textarea></div>
                 </div>
             </div>
         </div>
@@ -455,6 +456,8 @@
     </script>
 </body>
 </html>
+학사일정 복구
+
 
 
 
